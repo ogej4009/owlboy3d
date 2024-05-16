@@ -1,0 +1,2652 @@
+#include "_ljTileRender.h"
+#include "HSTILERENDER.h"
+#include "HSCAM.h"
+#include <HSGFILE.h>
+
+
+HSTILERENDER::HSTILERENDER() : m_Color(HSVEC4::White)
+{
+
+}
+
+HSTILERENDER::~HSTILERENDER()
+{
+	Clear();
+}
+
+
+
+void HSTILERENDER::Render(HSPTR<HSCAM> _Cam)
+{
+	HSTRANS::Update();
+	HSTRANS::CalTransData(_Cam);
+
+	HSVEC4 TilePos;
+
+	for (auto& Tile : m_AllTileList)
+	{
+		if ((-13 + m_CamKey.X) > Tile->m_Key.X
+			|| (13 + m_CamKey.X) < Tile->m_Key.X
+			|| (-9 + m_CamKey.Y) > Tile->m_Key.Y
+			|| (9 + m_CamKey.Y) < Tile->m_Key.Y)
+		{
+			continue;
+		}
+
+
+
+		Tile->m_TransData.W = CREFWW();
+
+		TilePos.x = Tile->m_TransData.W.ArrVec[3].x + (float)(Tile->m_Key.X * Tile->m_TransData.W.ArrVec[0].x);
+		TilePos.y = Tile->m_TransData.W.ArrVec[3].y + (float)(Tile->m_Key.Y * Tile->m_TransData.W.ArrVec[1].y);
+		TilePos.z = Tile->m_TransData.W.ArrVec[3].z;
+
+		Tile->m_TransData.W.ArrVec[3] = TilePos;
+		Tile->m_TransData.V = _Cam->MatView();
+		Tile->m_TransData.P = _Cam->MatProj();
+		Tile->m_TransData.WV = Tile->m_TransData.W * Tile->m_TransData.V;
+		Tile->m_TransData.VP = _Cam->MatViewProj();
+		Tile->m_TransData.WVP = Tile->m_TransData.W * Tile->m_TransData.V * Tile->m_TransData.P;
+		Tile->m_TransData.AllTP();
+
+		if (false == Tile->RD->IsUpdate())
+		{
+			continue;
+		}
+		Tile->RD->Render();
+
+	}
+
+}
+
+
+void HSTILERENDER::Save(const HSSTRING& _Path)
+{
+	HSGFILE NewFile = HSGFILE(_Path, L"wb");
+	NewFile.Write(m_Sprite->HSName());
+	NewFile.Write((int)m_AllTile.size());
+	for (auto& Tile : m_AllTile)
+	{
+		NewFile.Write(Tile.second->m_Key.TileKey);
+		NewFile.Write(Tile.second->m_Index);
+	}
+}
+void HSTILERENDER::Load(const HSSTRING& _Path)
+{
+	Clear();
+	HSGFILE NewFile = HSGFILE(_Path, L"rb");
+
+	HSSTRING Str;
+	NewFile.Read(Str);
+	Sprite(Str);
+
+	int Count;
+	NewFile.Read(Count);
+
+	HSKEY LoadKey;
+	unsigned int Index;
+	for (size_t i = 0; i < Count; i++)
+	{
+		NewFile.Read(LoadKey);
+		NewFile.Read(Index);
+
+		CreateTile(LoadKey.TileKey, Index);
+	}
+
+}
+void HSTILERENDER::Clear()
+{
+	std::map<__int64, TILE*>::iterator Start = m_AllTile.begin();
+	std::map<__int64, TILE*>::iterator End = m_AllTile.end();
+
+	for (; Start != End; ++Start)
+	{
+		Start->second->RD->Death();
+		delete Start->second;
+	}
+	m_AllTile.clear();
+	m_AllTileList.clear();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+#pragma once
+#include "HSRENDER.h"
+#include "HS2DSPRITE.h"
+#include <list>
+
+class HSTILERENDER : public HSRENDER
+{
+public:
+	class HSKEY
+	{
+	public:
+		union
+		{
+			struct
+			{
+				int X;
+				int Y;
+			};
+			__int64 TileKey;
+		};
+		HSKEY& operator+=(const HSKEY& _Other)
+		{
+			X += _Other.X;
+			Y += _Other.Y;
+			return *this;
+		}
+		HSKEY() : X(0), Y(0)
+		{
+
+		}
+		HSKEY(int _X, int _Y) : X(_X), Y(_Y)
+		{
+
+		}
+	};
+
+private:
+	class TILE
+	{
+	public:
+		HSKEY m_Key;
+		TRANSDATA m_TransData;
+		unsigned int m_Index;
+		HSRENDERDATA* RD;
+		TILE(int _Index, HSRENDERDATA* _RD) : RD(_RD), m_Index(_Index)
+		{
+
+		}
+	};
+
+private:
+	HSPTR<HS2DSPRITE> m_Sprite;
+	HSVEC4 m_Color;
+	std::map<__int64, TILE*> m_AllTile;
+	std::list<TILE*> m_AllTileList;
+
+	HSKEY m_PlayerKey;
+	HSKEY m_CamKey;
+public:
+	void PlayerKey(HSVEC4 _Pos)
+	{
+		m_PlayerKey.TileKey = CreateKey((int)std::roundf(_Pos.x), (int)std::roundf(_Pos.y));
+	}
+
+	void CamKey(HSVEC4 _Pos)
+	{
+		m_CamKey.TileKey = CreateKey((int)std::roundf(_Pos.x), (int)std::roundf(_Pos.y));
+	}
+public:
+	bool IsTile(HSVEC4 _Pos)
+	{
+		if (m_AllTile.end() != m_AllTile.find(CreateKey((int)std::roundf(_Pos.x), (int)std::roundf(_Pos.y))))
+		{
+			return true;
+		}
+		return false;
+	}
+
+
+	HSKEY IsTileIndex(HSVEC4 _Pos)
+	{
+		std::map<__int64, TILE*>::iterator Fiter = m_AllTile.find(CreateKey((int)std::roundf(_Pos.x), (int)std::roundf(_Pos.y)));
+		if (m_AllTile.end() != Fiter)
+		{
+			HSKEY Key;
+
+			Key.TileKey = Fiter->second->m_Index;
+			return  Key;
+		}
+
+		HSKEY FalseKey;
+		return FalseKey;
+	}
+
+public:
+	void Sprite(const HSSTRING& _Name)
+	{
+		m_Sprite = HS2DSPRITE::Find(_Name);
+		if (nullptr == m_Sprite)
+		{
+			BOOM;
+		}
+	}
+	size_t SpriteCutSize(const HSSTRING& _Name)
+	{
+		m_Sprite = HS2DSPRITE::Find(_Name);
+		if (nullptr == m_Sprite)
+		{
+			BOOM;
+			return 0;
+		}
+
+		return m_Sprite->CutSize();
+	}
+
+	HSPTR<HS2DSPRITE> Sprite()
+	{
+		return m_Sprite;
+	}
+
+	__int64 CreateKey(int _X, int _Y)
+	{
+		HSKEY Key = HSKEY(_X, _Y);
+		return Key.TileKey;
+	}
+
+
+
+	void DeleteTile(HSVEC4 _Pos, unsigned int _Index)
+	{
+
+		DeleteTile((int)std::roundf(_Pos.x), (int)std::roundf(_Pos.y), _Index);
+	}
+	void DeleteTile(int _X, int _Y, unsigned int _Index)
+	{
+		DeleteTile(CreateKey(_X, _Y), _Index);
+	}
+	void DeleteTile(__int64 _Key, unsigned int _Index)
+	{
+		__int64 Key = _Key;
+		std::map<__int64, TILE*>::iterator Fiter = m_AllTile.find(Key);
+
+		if (m_AllTile.end() == Fiter)
+		{
+			return;
+		}
+		m_AllTileList.remove(Fiter->second);
+		Fiter->second->RD->Death();
+		delete Fiter->second;
+		m_AllTile.erase(Fiter);
+
+	}
+
+	void CreateTile(HSVEC4 _Pos, unsigned int _Index)
+	{
+		CreateTile((int)std::roundf(_Pos.x), (int)std::roundf(_Pos.y), _Index);
+	}
+	void CreateTile(int _X, int _Y, unsigned int _Index)
+	{
+		CreateTile(CreateKey(_X, _Y), _Index);
+	}
+
+	void CreateTile(__int64 _Key, unsigned int _Index)
+	{
+		__int64 Key = _Key;
+		std::map<__int64, TILE*>::iterator Fiter = m_AllTile.find(Key);
+		if (m_AllTile.end() != Fiter)
+		{
+			DeleteTile(_Key, _Index);
+
+			TILE* NewTile = new TILE(0, nullptr);
+			NewTile->m_Key.TileKey = Key;
+
+			m_AllTile.insert(std::map<__int64, TILE*>::value_type(Key, NewTile));
+			m_AllTileList.push_back(NewTile);
+
+			HSRENDERDATA* RD = CreateRenderData(L"2DRECT", L"2DSPRITE", NewTile->m_TransData);
+			RD->SMP(L"LSMP", L"LSMP");
+			RD->SMP(L"PSMP", L"PSMP");
+			RD->CB(L"TEXCOLOR", m_Color, true);
+			RD->TEX(L"SpriteTex", m_Sprite->Tex());
+			NewTile->RD = RD;
+			NewTile->m_Index = _Index;
+			NewTile->RD->CB(L"TEXCUT", m_Sprite->CutData(NewTile->m_Index));
+			return;
+		}
+		TILE* NewTile = new TILE(0, nullptr);
+		NewTile->m_Key.TileKey = Key;
+
+		m_AllTile.insert(std::map<__int64, TILE*>::value_type(Key, NewTile));
+		m_AllTileList.push_back(NewTile);
+
+		HSRENDERDATA* RD = CreateRenderData(L"2DRECT", L"2DSPRITE", NewTile->m_TransData);
+		RD->SMP(L"LSMP", L"LSMP");
+		RD->SMP(L"PSMP", L"PSMP");
+		RD->CB(L"TEXCOLOR", m_Color, true);
+		RD->TEX(L"SpriteTex", m_Sprite->Tex());
+		NewTile->RD = RD;
+		NewTile->m_Index = _Index;
+		NewTile->RD->CB(L"TEXCUT", m_Sprite->CutData(NewTile->m_Index));
+
+	}
+
+
+	void Render(HSPTR<HSCAM> _Cam) override;
+
+	void Save(const HSSTRING& _Path);
+	void Load(const HSSTRING& _Path);
+
+	void Clear();
+
+public:
+	HSTILERENDER();
+	~HSTILERENDER();
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+// .MapData
+void HSMAPSCENECOM::Update()
+{
+	RD->CamKey(MC->Trans()->WPOS());
+	if (true == HSGAMEINPUT::Press(L"CAMZERO"))
+	{
+		MC->Trans()->LPOS({ 0.0f, 0.0f, 0.0f });
+	}
+	if (true == HSGAMEINPUT::Press(L"MML"))
+	{
+		MC->Trans()->LMoveToTimeSpeed(HSVEC4::LEFT, 8.0f);
+	}
+	if (true == HSGAMEINPUT::Press(L"MMR"))
+	{
+		MC->Trans()->LMoveToTimeSpeed(HSVEC4::RIGHT, 8.0f);
+	}
+	if (true == HSGAMEINPUT::Press(L"MMU"))
+	{
+		MC->Trans()->LMoveToTimeSpeed(HSVEC4::UP, 8.0f);
+	}
+	if (true == HSGAMEINPUT::Press(L"MMD"))
+	{
+		MC->Trans()->LMoveToTimeSpeed(HSVEC4::DOWN, 8.0f);
+	}
+	if (true == HSGAMEINPUT::Press(L"MMZI"))
+	{
+		MC->Trans()->LMoveToTimeSpeed(HSVEC4::BACK, 8.0f);
+	}
+	if (true == HSGAMEINPUT::Press(L"MMZO"))
+	{
+		MC->Trans()->LMoveToTimeSpeed(HSVEC4::FORWARD, 8.0f);
+	}
+	if (true == HSGAMEINPUT::Press(L"TILECREATE"))
+	{
+		if (MC->Trans()->WPOS().x - (MC->Size().x * 0.5f) > MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).x ||
+			MC->Trans()->WPOS().x + (MC->Size().x * 0.5f) < MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).x ||
+			MC->Trans()->WPOS().y - (MC->Size().y * 0.5f) > MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).y ||
+			MC->Trans()->WPOS().y + (MC->Size().y * 0.5f) < MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).y)
+		{
+			int a = 0;
+		}
+		else
+		{
+			RD->CreateTile(MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()), m_Index);
+		}
+	}
+	if (true == HSGAMEINPUT::Press(L"TILECLEAR"))
+	{
+		RD->Clear();
+	}
+	if (true == HSGAMEINPUT::Press(L"TILEDELETE"))
+	{
+		if (MC->Trans()->WPOS().x - (MC->Size().x * 0.5f) > MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).x ||
+			MC->Trans()->WPOS().x + (MC->Size().x * 0.5f) < MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).x ||
+			MC->Trans()->WPOS().y - (MC->Size().y * 0.5f) > MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).y ||
+			MC->Trans()->WPOS().y + (MC->Size().y * 0.5f) < MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()).y)
+		{
+			int a = 0;
+		}
+		else
+		{
+			RD->DeleteTile(MC->ScreenPos3DToWorldPos(HSWINDOW::MainWindow()->MousePos3D()), m_Index);
+		}
+	}
+	if (true == HSGAMEINPUT::Down(L"INDEXPLUS"))
+	{
+		if (m_Index >= RD->SpriteCutSize(L"plainsOfPassage.png"))
+		{
+			m_Index = RD->SpriteCutSize(L"plainsOfPassage.png") - 1;
+		}
+		else
+		{
+			++m_Index;
+		}
+	}
+	if (true == HSGAMEINPUT::Down(L"INDEXMINUS"))
+	{
+		if (m_Index <= 0)
+		{
+			m_Index = 0;
+		}
+		else
+		{
+			--m_Index;
+		}
+	}
+	if (true == HSGAMEINPUT::Press(L"INDEXPLUSPRESS"))
+	{
+		if (m_Index >= RD->SpriteCutSize(L"plainsOfPassage.png"))
+		{
+			m_Index = RD->SpriteCutSize(L"plainsOfPassage.png") - 1;
+		}
+		else
+		{
+			++m_Index;
+		}
+	}
+	if (true == HSGAMEINPUT::Press(L"INDEXMINUSPRESS"))
+	{
+		if (m_Index <= 0)
+		{
+			m_Index = 0;
+		}
+		else
+		{
+			--m_Index;
+		}
+	}
+}
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#pragma once
+#include "_ljGameActor.h" 
+#include <_ljGameFile.h>
+#include <_ljGameDir.h>
+#include <list>
+
+class _ljGameMap;
+class _ljGameFile;
+class _ljGameWall;
+class _ljGameDoor;
+class _ljTorch;
+class _ljGameWallTriple;
+class _ljGreenSlime;
+class _ljBlueSlime;
+class _ljBat;
+class _ljSkeleton;
+class _ljMinotaur;
+class _ljMonkey;
+class _ljDragon;
+class _ljStair;
+class _ljText;
+class _ljMonster;
+class _ljTile;
+class _ljTileRenderer;
+class _ljMapEditor : public _ljGameActor
+{
+	enum class ObjectData {
+		tile = -1,
+		wall = 0,
+		door,
+		doorSide,
+		shopFloor,
+		shopItem,
+		stair,
+		stairlock,
+		walltorch,
+		cryptWall,
+		dirtWall,
+		dirtWallCrack,
+		dirtWallNestItem,
+		dirtWallNestDia,
+		stoneWall,
+		stoneWallCrack,
+		unbreakable,
+		bossWall,
+		waterTile,
+		chest,
+		chest2,
+		weapon,
+		armor,
+		helmet,
+		shopKeeper,
+		greenSlime,
+		blueSlime,
+		bat,
+		skeleton,
+		zombie,
+		minotaur,
+		monkey,
+		coralhead,
+		coraldrum,
+		coralhorn,
+		coratkeytar,
+		coralstring,
+		dragon,
+		text_HelloWorld,
+
+
+		Max,
+	};
+
+public:
+	//SGAMEACTOR에서 몬스터, 벽이 사라질때 여기서도 빼주기
+	std::list<_ljMonster*>& GetMonsterList()
+	{
+		return m_ListMonster;
+	}
+
+	std::list<_ljGameActor*>& GetMapActor()
+	{
+		return m_ListMapActor;
+	}
+
+
+private:
+	//벡터 원소 위치정보, 이름
+	//MapActor로 잡다한거 관리하기
+	//충돌체크는 어차피 Actor에 있는 맵으로 해야함
+	//저장, 로딩용도로만 사용
+	std::list<_ljGameActor*> m_ListMapActor;
+	std::list<_ljMonster*> m_ListMonster;
+	std::wstring m_WallName[8];
+	std::wstring SaveFileName;
+
+	bool m_WaterTileMake;
+	_ljVector m_MousePos;
+	_ljVector m_CalcMousePos;
+	_ljGameFile* m_SaveFile;
+	_ljGameDir m_GameDir;
+	ObjectData m_EObjectdata;
+
+	//디버깅용
+	wchar_t buff[100];
+
+	//타일용도
+	//자체적으로 추가되는 타일을 관리하는 자료구조
+	_ljGameMap* m_TileMap;
+	_ljGameMap* m_WaterTileMap;
+	_ljTileRenderer* TileRenderer;
+	_ljTileRenderer* WaterTileRenderer;
+
+	std::wstring m_TileName[2];
+	int m_TileNameIndex;
+
+
+public:
+	_ljMapEditor(std::wstring _SaveFile, int m_TileNameIndex = 0);
+	~_ljMapEditor();
+
+public:
+	void Update() override;
+	void ChangeTileIndex(int _zeroOrOne)
+	{
+		m_TileNameIndex = _zeroOrOne;
+	}
+
+
+private:
+	void TilemapInit();
+	void CheckObjectType();
+	//void InitUI();
+};
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#include "_ljMapEditor.h"
+#include <_ljGamePath.h>
+#include <_ljGameInput.h>
+#include <_ljGameDir.h>
+#include <_ljGameWin.h>
+#include "_ljGameWall.h"
+#include "_ljGameDoor.h"
+#include "_ljTorch.h"
+#include "_ljGreenSlime.h"
+#include "_ljBlueSlime.h"
+#include "_ljBat.h"
+#include "_ljSkeleton.h"
+#include "_ljMinotaur.h"
+#include "_ljMonkey.h"
+#include "_ljDragon.h"
+#include "_ljStair.h"
+#include "_ljText.h"
+#include "_ljGameRenderer.h"
+#include "_ljGameMap.h"
+#include "_ljGameBackWall.h"
+#include "_ljGameState.h"
+#include "_ljWeapon.h"
+#include "_ljArmor.h"
+#include "_ljHelmet.h"
+#include "_ljShopKeeper.h"
+#include "_ljStairLock.h"
+#include "_ljShopFloor.h"
+#include "_ljShopItem.h"
+#include "_ljZombie.h"
+#include "_ljCoralHead.h"
+#include "_ljDrum.h"
+#include "_ljHorn.h"
+#include "_ljKeyTar.h"
+#include "_ljString.h"
+#include "_ljChest.h"
+
+/* 
+436,33
+816,26
+1121,33
+*/
+_ljMapEditor::_ljMapEditor(std::wstring _SaveFile, int _TileNameIndex /*= 0*/) : m_GameDir(), SaveFileName(_SaveFile), m_WaterTileMake(false)
+{
+	m_WallName[0] = L"wall_shop_crypt.bmp";
+	m_WallName[1] = L"zone1_wall_dirt_cracked.bmp";
+	m_WallName[2] = L"wall_dirt_crypt.bmp";
+	m_WallName[3] = L"wall_stone_crypt.bmp";
+	m_WallName[4] = L"zone1_wall_stone_cracked.bmp";
+	m_WallName[5] = L"wall_dirt_crypt.bmp";
+	m_WallName[6] = L"TEMP_wall_unbreakable.bmp";
+	m_WallName[7] = L"boss_wall.bmp";
+
+	m_TileName[0] = L"floor_dirt1.bmp";
+	m_TileName[1] = L"boss_floor_A.bmp";
+	m_TileNameIndex = _TileNameIndex;
+	Pos({ m_TilePadding / 2 , m_TilePadding / 2 });
+	TilemapInit();
+	//InitUI();
+	m_GameDir.MoveParent();
+	m_GameDir.Move(L"res");
+	State()->SetEditor(this);
+
+}
+
+
+void _ljMapEditor::Update()
+{
+	if (_ljGameInput::Press(L"SAVEBTN"))
+	{
+		std::wstring SavePath = m_GameDir.CFullPath() + L"\\" + SaveFileName.c_str();
+		_ljGameFile SaveFile = _ljGameFile(SavePath.c_str(), L"wb");
+
+		//바닥 저장
+		{
+			SaveFile.Write(static_cast<int>(TileRenderer->m_AllTile.size()));
+			auto StartIter = TileRenderer->m_AllTile.begin();
+			auto EndIter = TileRenderer->m_AllTile.end();
+			_ljVector::MapIndex tempindex;
+			int xPos = 0;
+			int yPos = 0;
+
+			for (; StartIter != EndIter; ++StartIter)
+			{
+				tempindex.Index = (*StartIter).first;
+				xPos = tempindex.X;
+				yPos = tempindex.Y;
+				SaveFile.Write(xPos);
+				SaveFile.Write(yPos);
+			}
+
+		}
+		//저장해야 할 것 
+		//1. 벽의 갯수
+		//2. 벽의 위치
+		//3. 단일 비트맵 벽 저장하기
+		{
+			SaveFile.Write(static_cast<int>(m_ListMapActor.size()));
+			auto IterStart = m_ListMapActor.begin();
+			auto IterEnd = m_ListMapActor.end();
+			std::wstring tempString;
+			_ljVector::MapIndex savePosIndex;
+			int tempType = 0;
+			for (; IterStart != IterEnd; ++IterStart)
+			{
+				switch ((*IterStart)->ActorType())
+				{
+				case EActorTypeIndex::Wall: {
+					//다운캐스팅
+					_ljGameWall* NewWall = static_cast<_ljGameWall*>(*IterStart);
+					tempType = static_cast<int>(NewWall->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					tempString = NewWall->m_Wall->GetImageName()->c_str();
+					SaveFile.Write(tempString);
+					savePosIndex = NewWall->m_Wall->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					SaveFile.Write(NewWall->m_Wall->Index());
+					break;
+				}
+
+				case EActorTypeIndex::BackWall:
+				{
+					_ljGameBackWall* NewBackWall = static_cast<_ljGameBackWall*>(*IterStart);
+					tempType = static_cast<int>(NewBackWall->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					tempString = NewBackWall->m_BackWall->GetImageName()->c_str();
+					SaveFile.Write(tempString);
+					savePosIndex = NewBackWall->m_BackWall->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					SaveFile.Write(NewBackWall->m_BackWall->Index());
+					break;
+				}
+				case EActorTypeIndex::Door:
+				{
+					_ljGameDoor* NewDoor = static_cast<_ljGameDoor*>(*IterStart);
+					tempType = static_cast<int>(NewDoor->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					SaveFile.Write(NewDoor->m_bIsSide);
+					savePosIndex = NewDoor->m_Door->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::ShopFloor:
+				{
+					_ljShopFloor* NewStair = static_cast<_ljShopFloor*>(*IterStart);
+					tempType = static_cast<int>(NewStair->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewStair->m_ShopFloor->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::Stair:
+				{
+					_ljStair* NewStair = static_cast<_ljStair*>(*IterStart);
+					tempType = static_cast<int>(NewStair->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewStair->m_Stair->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::StairLock:
+				{
+					_ljStairLock* NewStair = static_cast<_ljStairLock*>(*IterStart);
+					tempType = static_cast<int>(NewStair->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewStair->m_Stair->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::ShopItem:
+				{
+					_ljShopItem* NewStair = static_cast<_ljShopItem*>(*IterStart);
+					tempType = static_cast<int>(NewStair->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = CalcIndex(NewStair->m_InitPos);
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::Weapon:
+				{
+					_ljWeapon* NewWeapon = static_cast<_ljWeapon*>(*IterStart);
+					tempType = static_cast<int>(NewWeapon->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewWeapon->m_Weapon->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					tempType = (int)(NewWeapon->m_WeaponType);
+					SaveFile.Write(tempType);
+					break;
+				}
+				case EActorTypeIndex::Armor:
+				{
+					_ljArmor* NewArmor = static_cast<_ljArmor*>(*IterStart);
+					tempType = static_cast<int>(NewArmor->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewArmor->m_Armor->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::Helmet:
+				{
+					_ljHelmet* NewHelmet = static_cast<_ljHelmet*>(*IterStart);
+					tempType = static_cast<int>(NewHelmet->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewHelmet->m_Helmet->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::Walltorch:
+				{
+					_ljTorch* NewTorch = static_cast<_ljTorch*>(*IterStart);
+					tempType = static_cast<int>(NewTorch->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewTorch->m_Torch->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::ShopKeeper:
+				{
+					_ljShopKeeper* NewKeeper = static_cast<_ljShopKeeper*>(*IterStart);
+					tempType = static_cast<int>(NewKeeper->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					savePosIndex = NewKeeper->m_Keeper->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::Chest:
+				{
+					_ljChest* NewChest = static_cast<_ljChest*>(*IterStart);
+					tempType = static_cast<int>(NewChest->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					int tempInt = NewChest->InWeapon();
+					SaveFile.Write(tempInt);
+					savePosIndex = NewChest->m_Chest->SubPosIndeX();
+					SaveFile.Write(savePosIndex);
+					break;
+				}
+				case EActorTypeIndex::Text:
+				{
+					_ljText* NewText = static_cast<_ljText*>(*IterStart);
+					tempType = static_cast<int>(NewText->m_ActorTypeIndex);
+					SaveFile.Write(tempType);
+					tempString = NewText->GetText();
+					SaveFile.Write(tempString);
+					savePosIndex = NewText->m_TextPos;
+					SaveFile.Write(savePosIndex);
+
+					break;
+				}
+				default:
+					break;
+				}
+			}
+
+		}
+		{
+			//몬스터 저장하기
+			SaveFile.Write(static_cast<int>(m_ListMonster.size()));
+			auto IterStart = m_ListMonster.begin();
+			auto IterEnd = m_ListMonster.end();
+			_ljVector::MapIndex savePosIndex = { 0,0 };
+
+			int tempIndex = 0;
+			for (; IterStart != IterEnd; ++IterStart)
+			{
+				tempIndex = static_cast<int>((*IterStart)->m_ActorTypeIndex);
+				auto renderIter = (*IterStart)->m_AllRenderList.begin();
+				savePosIndex = (*IterStart)->MonsterPosIndex();
+
+				SaveFile.Write(tempIndex);
+				SaveFile.Write(savePosIndex);
+			}
+		}
+
+		//물바닥 저장
+		{
+			if (WaterTileRenderer != nullptr)
+			{
+				SaveFile.Write(static_cast<int>(WaterTileRenderer->m_AllTile.size()));
+				auto StartIter = WaterTileRenderer->m_AllTile.begin();
+				auto EndIter = WaterTileRenderer->m_AllTile.end();
+				_ljVector::MapIndex tempindex;
+				int xPos = 0;
+				int yPos = 0;
+
+				for (; StartIter != EndIter; ++StartIter)
+				{
+					tempindex.Index = (*StartIter).first;
+					xPos = tempindex.X;
+					yPos = tempindex.Y;
+					SaveFile.Write(xPos);
+					SaveFile.Write(yPos);
+				}
+			}
+
+
+		}
+	}
+
+
+	if (_ljGameInput::Down(L"CHANGEOBJECTBTN"))
+	{
+		if (static_cast<int>(m_EObjectdata) >= static_cast<int>(ObjectData::Max) - 1)
+		{
+			m_EObjectdata = ObjectData::tile;
+			swprintf_s(buff, L"Createtile\n");
+			OutputDebugStringW(buff);
+		}
+		else
+		{
+			m_EObjectdata = static_cast<ObjectData>(static_cast<int>(m_EObjectdata) + 1);
+			CheckObjectType();
+		}
+		// _UNICOD nodiscard
+	}
+
+
+	if (true == _ljGameInput::Down(L"RevCHANGEOBJECTBTN"))
+	{
+		if (static_cast<int>(m_EObjectdata) < 0)
+		{
+			m_EObjectdata = ObjectData::Max;
+			swprintf_s(buff, L"Max dont create \n");
+			OutputDebugStringW(buff);
+		}
+		else
+		{
+			m_EObjectdata = static_cast<ObjectData>(static_cast<int>(m_EObjectdata) - 1);
+			CheckObjectType();
+		}
+
+	}
+
+	m_MousePos = _ljGameWin::MainWindow()->MousePos();
+	//X,Y좌표 얻기
+	m_CalcMousePos = _ljVector({ round((m_MousePos.X + State()->CamPos().X) / m_TileSize)
+						   , round((m_MousePos.Y + State()->CamPos().Y) / m_TileSize) });
+	//얻은 좌표에 타일 크기 곱하기
+	m_CalcMousePos *= m_TileSize;
+
+
+	if (true == _ljGameInput::Press(L"LMOUSEBTN"))
+	{
+		TileRenderer->AddTile(_ljGameWin::MainWindow()->MousePos(), 0/*스프라이트 인덱스*/);;
+	}
+
+
+	if (true == _ljGameInput::Down(L"RMOUSEBTN"))
+	{
+		_ljVector::MapIndex calcIndex = { static_cast<int>(m_CalcMousePos.X / m_TileSize), static_cast<int>(m_CalcMousePos.Y / m_TileSize) };
+		std::map<__int64, _ljGameActor*>::iterator findMonster = State()->m_MonsterMap.find(calcIndex.Index);
+		std::map<__int64, _ljGameActor*>::iterator endMonster = State()->m_MonsterMap.end();
+
+		std::map<__int64, _ljGameActor*>::iterator findItem = State()->m_InterObjMap.find(calcIndex.Index);
+		std::map<__int64, _ljGameActor*>::iterator endItem = State()->m_InterObjMap.end();
+
+		std::map<__int64, _ljGameActor*>::iterator findWall = State()->m_WallActorMap.find(calcIndex.Index);
+		std::map<__int64, _ljGameActor*>::iterator endWall = State()->m_WallActorMap.end();
+
+		switch (m_EObjectdata)
+		{
+		case ObjectData::tile:
+		{
+			TileRenderer->AddTile(_ljGameWin::MainWindow()->MousePos(), 0/*스프라이트 인덱스*/);
+			break;
+		}
+		case ObjectData::wall:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[0]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[0]);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+
+		}
+		case ObjectData::door:
+		{
+			if (findItem == endItem)
+			{
+				_ljGameDoor* NewDoor = new _ljGameDoor(m_CalcMousePos, false);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewDoor));
+			}
+			break;
+		}
+		case ObjectData::doorSide:
+		{
+			if (findItem == endItem)
+			{
+				_ljGameDoor* NewDoor = new _ljGameDoor(m_CalcMousePos, true);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewDoor));
+			}
+			break;
+		}
+		case ObjectData::stair:
+		{
+			if (findItem == endItem)
+			{
+				_ljStair* NewStair = new _ljStair(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+			}
+			break;
+		}
+		case ObjectData::stairlock:
+		{
+			if (findItem == endItem)
+			{
+				_ljStairLock* NewStair = new _ljStairLock(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+			}
+			break;
+		}
+
+		case ObjectData::shopFloor:
+		{
+			if (findItem == endItem)
+			{
+				_ljShopFloor* NewStair = new _ljShopFloor(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+			}
+			break;
+		}
+		case ObjectData::walltorch:
+		{
+			if (findItem == endItem)
+			{
+				_ljTorch* NewTorch = new _ljTorch(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewTorch));
+			}
+			break;
+		}
+		case ObjectData::waterTile:
+		{
+			if (!m_WaterTileMake)
+			{
+				m_WaterTileMake = true;
+				m_WaterTileMap = new _ljGameMap(EActorTypeIndex::WaterTile);
+				WaterTileRenderer = m_TileMap->TileRen();
+				WaterTileRenderer->Image(L"TEMP_floor_water.bmp");
+				WaterTileRenderer->m_AllTile.begin();
+				State()->m_WaterTileRender = WaterTileRenderer;
+			}
+
+			WaterTileRenderer->AddTile(_ljGameWin::MainWindow()->MousePos(), 0);
+
+			break;
+		}
+		case ObjectData::dirtWallCrack:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[1]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[1]);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+		case ObjectData::dirtWall:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[2]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[2]);
+				NewWall->ChangeIndex(0);
+				NewBackWall->ChangeIndex(17);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+		case ObjectData::cryptWall:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[5]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[5]);
+				int random = _ljVector::RANDOM.RandomMinMax(2, 15);
+				NewWall->ChangeIndex(random);
+				NewBackWall->ChangeIndex(random + 17); // 17+index
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+
+		case ObjectData::dirtWallNestItem:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[2]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[2]);
+				NewWall->ChangeIndex(1);
+				NewBackWall->ChangeIndex(3);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+		case ObjectData::dirtWallNestDia:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[2]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[2]);
+				NewWall->ChangeIndex(2);
+				NewBackWall->ChangeIndex(3);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+		case ObjectData::stoneWall:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[3]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[3]);
+				NewWall->ChangeIndex(0);
+				NewBackWall->ChangeIndex(1);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+
+		case ObjectData::stoneWallCrack:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[4]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[4]);
+				NewWall->ChangeIndex(0);
+				NewBackWall->ChangeIndex(1);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+
+		case ObjectData::bossWall:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[6]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[6]);
+				NewWall->ChangeIndex(0);
+				NewBackWall->ChangeIndex(1);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+
+		case ObjectData::unbreakable:
+		{
+			if (findWall == endWall)
+			{
+				_ljGameWall* NewWall = new _ljGameWall(m_CalcMousePos, m_WallName[7]);
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(m_CalcMousePos, m_WallName[7]);
+				int random = _ljVector::RANDOM.RandomMinMax(0, 4);
+				NewWall->ChangeIndex(random);
+				NewBackWall->ChangeIndex(random + 5);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+			}
+			break;
+		}
+
+		case ObjectData::chest:
+		{
+			if (findItem == endItem)
+			{
+				_ljChest* NewWeapon = new _ljChest(m_CalcMousePos, 1);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+			}
+			break;
+		}
+
+		case ObjectData::chest2:
+		{
+			if (findItem == endItem)
+			{
+				_ljChest* NewWeapon = new _ljChest(m_CalcMousePos, 2);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+			}
+			break;
+		}
+
+		case ObjectData::weapon:
+		{
+			if (findItem == endItem)
+			{
+				_ljWeapon* NewWeapon = new _ljWeapon(m_CalcMousePos, _ljWeapon::WeaponType::BroadSword);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+			}
+			break;
+		}
+
+
+		case ObjectData::armor:
+		{
+			if (findItem == endItem)
+			{
+				_ljArmor* NewWeapon = new _ljArmor(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+			}
+			break;
+		}
+
+		case ObjectData::helmet:
+		{
+			if (findItem == endItem)
+			{
+				_ljHelmet* NewWeapon = new _ljHelmet(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+			}
+			break;
+		}
+
+
+		case ObjectData::shopKeeper:
+		{
+			if (findItem == endItem)
+			{
+				_ljShopKeeper* NewKeeper = new _ljShopKeeper(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewKeeper));
+			}
+			break;
+		}
+
+		case ObjectData::shopItem:
+		{
+			if (findItem == endItem)
+			{
+				_ljShopItem* NewKeeper = new _ljShopItem(m_CalcMousePos);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewKeeper));
+			}
+			break;
+		}
+
+		case ObjectData::greenSlime:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljGreenSlime* NewMonster = new _ljGreenSlime(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::blueSlime:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljBlueSlime* NewMonster = new _ljBlueSlime(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::bat:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljBat* NewMonster = new _ljBat(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::skeleton:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljSkeleton* NewMonster = new _ljSkeleton(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+
+		case ObjectData::coralhead:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljCoralHead* NewMonster = new _ljCoralHead(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+
+		case ObjectData::coraldrum:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljDrum* NewMonster = new _ljDrum(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+
+		case ObjectData::coralhorn:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljHorn* NewMonster = new _ljHorn(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+
+		case ObjectData::coratkeytar:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljKeyTar* NewMonster = new _ljKeyTar(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+
+		case ObjectData::coralstring:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljString* NewMonster = new _ljString(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+
+		case ObjectData::zombie:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljZombie* NewMonster = new _ljZombie(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::minotaur:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljMinotaur* NewMonster = new _ljMinotaur(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::monkey:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljMonkey* NewMonster = new _ljMonkey(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::dragon:
+		{
+			if (findMonster == endMonster)
+			{
+				_ljDragon* NewMonster = new _ljDragon(m_CalcMousePos);
+				m_ListMonster.push_back(static_cast<_ljMonster*>(NewMonster));
+			}
+			break;
+		}
+		case ObjectData::text_HelloWorld:
+		{
+			std::wstring newText = L"Zone1";
+			m_CalcMousePos.X += 4;
+			_ljText* NewText = new _ljText(m_CalcMousePos, { 8.0f, 10.0f }, newText);
+			m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewText));
+			break;
+		}
+
+		default:
+			BOOM;
+			break;
+		}
+	}
+}
+
+
+_ljMapEditor::~_ljMapEditor()
+{
+}
+
+
+
+void _ljMapEditor::TilemapInit()
+{
+	int tempindex = 0;
+	//각 스테이지를 이름으로 저장하고 불러올땐 이런식으로 불러오도록 하면 될듯
+	m_GameDir.MoveParent();
+	m_GameDir.Move(L"res");
+	std::wstring SavePath = m_GameDir.CFullPath();
+	SavePath.append(L"\\");
+	SavePath.append(SaveFileName);
+
+	if (false == _ljGamePath::IsExist(SavePath.c_str()))
+	{
+		m_TileMap = new _ljGameMap;
+		TileRenderer = m_TileMap->TileRen();
+		TileRenderer->Image(L"DebugTile.bmp");
+		State()->m_TileRender = TileRenderer;
+	}
+	else
+	{
+
+		int tempintData;
+		bool bIsSide = false;
+		tempindex = 0;
+		_ljVector tempVector;
+		std::wstring tempName;
+		int objectCount = 0;
+		_ljVector::MapIndex loadPosIndex = { 0,0 };
+
+		//바닥 로딩해오기
+		m_TileMap = new _ljGameMap;
+		TileRenderer = m_TileMap->TileRen();
+		TileRenderer->Image(m_TileName[m_TileNameIndex].c_str());
+		TileRenderer->m_AllTile.begin();
+		State()->m_TileRender = TileRenderer;
+
+		_ljGameFile LoadData = _ljGameFile(SavePath.c_str(), L"rb");
+		LoadData.Read(objectCount);
+
+		int xPos = 0;
+		int yPos = 0;
+		for (int i = 0; i < objectCount; ++i)
+		{
+			LoadData.Read(xPos);
+			LoadData.Read(yPos);
+			TileRenderer->AddTile(xPos, yPos);
+		}
+
+		LoadData.Read(objectCount);
+		//맵 액터
+		for (int i = 0; i < objectCount; ++i)
+		{
+			LoadData.Read(tempintData);
+			EActorTypeIndex tempType = static_cast<EActorTypeIndex>(tempintData);
+
+			switch (tempType)
+			{
+			case EActorTypeIndex::Wall:
+			{
+				LoadData.Read(tempName);
+				LoadData.Read(loadPosIndex);
+				LoadData.Read(tempindex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+
+				if (tempName == m_WallName[5])
+				{
+					if (tempindex > 1)
+					{
+						tempindex = _ljVector::RANDOM.RandomMinMax(2, 15);
+					}
+				}
+
+				_ljGameWall* NewWall = new _ljGameWall(tempVector, tempName);
+				NewWall->m_Wall->Index(tempindex);
+
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWall));
+				break;
+			}
+			case EActorTypeIndex::BackWall:
+			{
+				LoadData.Read(tempName);
+				LoadData.Read(loadPosIndex);
+				LoadData.Read(tempindex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+
+				if (tempName == m_WallName[5])
+				{
+					if (tempindex > 17)
+					{
+						tempindex = _ljVector::RANDOM.RandomMinMax(18, 30);
+					}
+				}
+
+				_ljGameBackWall* NewBackWall = new _ljGameBackWall(tempVector, tempName);
+				NewBackWall->m_BackWall->Index(tempindex);
+
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewBackWall));
+				break;
+			}
+			case EActorTypeIndex::Door:
+			{
+				LoadData.Read(bIsSide);
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljGameDoor* NewDoor = new _ljGameDoor(tempVector, bIsSide);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewDoor));
+				break;
+			}
+			case EActorTypeIndex::Stair:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljStair* NewStair = new _ljStair(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+				break;
+			}
+
+			case EActorTypeIndex::ShopFloor:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljShopFloor* NewStair = new _ljShopFloor(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+				break;
+			}
+
+			case EActorTypeIndex::ShopItem:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljShopItem* NewStair = new _ljShopItem(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+				break;
+			}
+
+			case EActorTypeIndex::StairLock:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljStairLock* NewStair = new _ljStairLock(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewStair));
+				break;
+			}
+
+			case EActorTypeIndex::Weapon:
+			{
+				LoadData.Read(loadPosIndex);
+				LoadData.Read(tempintData);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljWeapon* NewWeapon = new _ljWeapon(tempVector, (_ljWeapon::WeaponType)tempintData);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+				break;
+			}
+			case EActorTypeIndex::Armor:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljArmor* NewArmor = new _ljArmor(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewArmor));
+				break;
+			}
+			case EActorTypeIndex::Helmet:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljHelmet* NewWeapon = new _ljHelmet(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewWeapon));
+				break;
+			}
+			case EActorTypeIndex::Walltorch:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljTorch* NewTorch = new _ljTorch(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewTorch));
+				break;
+			}
+			case EActorTypeIndex::Chest:
+			{
+				LoadData.Read(tempintData);
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljChest* NewChest = new _ljChest(tempVector, tempintData);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewChest));
+				break;
+			}
+
+			case EActorTypeIndex::ShopKeeper:
+			{
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+				_ljShopKeeper* NewKeeper = new _ljShopKeeper(tempVector);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewKeeper));
+				break;
+			}
+			case EActorTypeIndex::Text:
+			{
+				LoadData.Read(tempName);
+				LoadData.Read(loadPosIndex);
+
+				tempVector = { loadPosIndex.X * m_TileSize + 4, loadPosIndex.Y * m_TileSize };
+				_ljText* NewText = new _ljText(tempVector, { 8.0f, 10.0f }, tempName);
+				m_ListMapActor.push_back(static_cast<_ljGameActor*>(NewText));
+				break;
+			}
+			default:
+				BOOM;
+				break;
+			}
+		}
+
+		//몬스터 로딩하기
+		LoadData.Read(objectCount);
+		for (int i = 0; i < objectCount; ++i)
+		{
+			LoadData.Read(tempindex);
+			LoadData.Read(loadPosIndex);
+
+			tempVector = { loadPosIndex.X * m_TileSize, loadPosIndex.Y * m_TileSize };
+
+			_ljMonster* tempPtr;
+
+
+			switch (static_cast<EActorTypeIndex>(tempindex))
+			{
+			case EActorTypeIndex::M_greenSlime:
+			{
+				_ljGreenSlime* NewMonster = new _ljGreenSlime(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_blueSlime:
+			{
+				_ljBlueSlime* NewMonster = new _ljBlueSlime(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_CoralHead:
+			{
+				_ljCoralHead* NewMonster = new _ljCoralHead(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_CoralDrum:
+			{
+				_ljDrum* NewMonster = new _ljDrum(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_CoralHorn:
+			{
+				_ljHorn* NewMonster = new _ljHorn(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_CoralKeytar:
+			{
+				_ljKeyTar* NewMonster = new _ljKeyTar(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_CoralString:
+			{
+				_ljString* NewMonster = new _ljString(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_bat:
+			{
+				_ljBat* NewMonster = new _ljBat(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_skeleton:
+			{
+				_ljSkeleton* NewMonster = new _ljSkeleton(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_zombie:
+			{
+				_ljZombie* NewMonster = new _ljZombie(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_minotaur:
+			{
+				_ljMinotaur* NewMonster = new _ljMinotaur(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_monkey:
+			{
+				_ljMonkey* NewMonster = new _ljMonkey(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			case EActorTypeIndex::M_dragon:
+			{
+				_ljDragon* NewMonster = new _ljDragon(tempVector);
+				tempPtr = static_cast<_ljMonster*>(NewMonster);
+			}
+			break;
+			default:
+				BOOM;
+				break;
+			}
+
+			m_ListMonster.push_back(tempPtr);
+		}
+
+
+		//물바닥 로딩해오기
+
+		LoadData.Read(objectCount);
+
+		xPos = 0;
+		yPos = 0;
+		for (int i = 0; i < objectCount; ++i)
+		{
+			if (i == 0) // i 어디갔냐?
+			{
+				m_WaterTileMap = new _ljGameMap(EActorTypeIndex::WaterTile);
+				WaterTileRenderer = m_WaterTileMap->TileRen();
+				WaterTileRenderer->Image(L"TEMP_floor_water.bmp");
+				WaterTileRenderer->m_AllTile.begin();
+				State()->m_WaterTileRender = WaterTileRenderer;
+
+			}
+
+
+			LoadData.Read(xPos);
+			LoadData.Read(yPos);
+			WaterTileRenderer->AddTile(xPos, yPos);
+		}
+
+
+
+	}
+}
+
+
+void _ljMapEditor::CheckObjectType()
+{
+	switch (m_EObjectdata)
+	{
+	case ObjectData::tile:
+		swprintf_s(buff, L"Creattile\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::wall:
+		swprintf_s(buff, L"Createwall\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::door:
+		swprintf_s(buff, L"CreateFrontdoor\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::doorSide:
+		swprintf_s(buff, L"CreateSidedoor\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::shopFloor:
+		swprintf_s(buff, L"CreateshopFloor\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::stair:
+		swprintf_s(buff, L"Createstair\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::waterTile:
+		swprintf_s(buff, L"waterTile\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::stairlock:
+		swprintf_s(buff, L"Createstairlock\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::walltorch:
+		swprintf_s(buff, L"CreateTorch\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::cryptWall:
+		swprintf_s(buff, L"cryptWall\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::dirtWall:
+		swprintf_s(buff, L"dirtWall\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::dirtWallCrack:
+		swprintf_s(buff, L"dirtWallCrack\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::dirtWallNestItem:
+		swprintf_s(buff, L"DirtWallNestItem\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::dirtWallNestDia:
+		swprintf_s(buff, L"DirtWallNestDia\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::shopItem:
+		swprintf_s(buff, L"shopItem\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::stoneWall:
+		swprintf_s(buff, L"stoneWall\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::stoneWallCrack:
+		swprintf_s(buff, L"stoneWallCrack\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::bossWall:
+		swprintf_s(buff, L"Unbreak\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::unbreakable:
+		swprintf_s(buff, L"BossWall\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::weapon:
+		swprintf_s(buff, L"weapon\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::chest:
+		swprintf_s(buff, L"chest\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::chest2:
+		swprintf_s(buff, L"chest2\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::armor:
+		swprintf_s(buff, L"armor\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::helmet:
+		swprintf_s(buff, L"helmet\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::coralhead:
+		swprintf_s(buff, L"coralhead\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::coraldrum:
+		swprintf_s(buff, L"coraldrum\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::coralhorn:
+		swprintf_s(buff, L"coralhorn\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::coralstring:
+		swprintf_s(buff, L"coralstring\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::coratkeytar:
+		swprintf_s(buff, L"coratkeytar\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::shopKeeper:
+		swprintf_s(buff, L"shopKeeper\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::greenSlime:
+		swprintf_s(buff, L"greenSlime\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::blueSlime:
+		swprintf_s(buff, L"blueSlime\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::bat:
+		swprintf_s(buff, L"bat\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::skeleton:
+		swprintf_s(buff, L"skeleton\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::zombie:
+		swprintf_s(buff, L"zombie\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::minotaur:
+		swprintf_s(buff, L"minotaur\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::monkey:
+		swprintf_s(buff, L"monkey\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::dragon:
+		swprintf_s(buff, L"dragon\n");
+		OutputDebugStringW(buff);
+		break;
+	case ObjectData::text_HelloWorld:
+		swprintf_s(buff, L"text_HelloWorld\n");
+		OutputDebugStringW(buff);
+		break;
+	default:
+		BOOM;
+		break;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#pragma once
+#include "_ljGameRenderer.h"
+#include <map>
+#include <set>
+#include <vector>
+#include <_ljGameImage.h>
+
+
+class _ljTileRenderer : public _ljGameRenderer
+{
+
+private:
+	enum TILEDIRNUM
+	{
+		TILEDIR_MAX = 4,
+	};
+
+	static _ljVector::MapIndex m_DirArr[TILEDIR_MAX];
+
+	//타일 이동가능 여부와 스프라이트 인덱스 저장용 클래스
+	class TileData
+	{
+	public:
+		bool m_Move;
+		int m_SpriteIndex;
+		int m_Len;
+	};
+
+	int m_Mask;
+
+public:
+	std::map<__int64, TileData*>::iterator findIter;
+	std::map<__int64, TileData*>::iterator TileStart;
+	std::map<__int64, TileData*>::iterator TileEnd;
+	std::map<__int64, TileData*> m_AllTile;
+
+	//모든 타일정보 리턴
+	std::map<__int64, TileData*>& AllTile()
+	{
+		return m_AllTile;
+	}
+
+public:
+	void AddTile(_ljVector _Pos, int _SpriteIndex = 0);
+	void AddTile(int _X, int _Y, int _SpriteIndex = 0);
+	TileData* FindTile(int _X, int _Y);
+	void Render() override;
+
+public:
+	//인덱스 위치 알아내기
+	_ljVector::MapIndex PosToIndex(const _ljVector _Pos);
+	//인덱스 타일의 m_Len값 리턴해주기
+	int Len(_ljVector::MapIndex _Index);
+
+	// Astar
+private:
+	class PathNode
+	{
+	public:
+		// 대각선 이동이 되냐 안되냐?
+		_ljVector::MapIndex Index;
+		float StartDis; // 시작점까지 오기위해서 걸린 거리
+		float EndDis; // 최단거리
+		float AllDis; // StartDis + EndDis 둘을 합친 거리
+		PathNode* Parent; //부모노드, 처음 시작인 노드는 항상 비어있다.
+
+	public:
+		// 인덱스는 세팅되어있는 상황이라고 생각하자.
+		// 목적지 좌표와 부모노드를 받아온다.
+		void CalDisData(_ljVector::MapIndex _End, PathNode* _Parent)
+		{
+			// Index = _This;
+			// StartDis 지금 계산하지 않는다.
+
+			//처음 시작인 노드
+			if (nullptr == _Parent)
+			{
+				StartDis = 0.0f;
+			}
+			//나머지 노드의 시작지점 계산
+			else
+			{
+				StartDis = _Parent->StartDis;
+				Parent = _Parent;
+				_ljVector ParentPos = { Parent->Index.X, Parent->Index.Y };
+				_ljVector Start = { Index.X, Index.Y };
+				_ljVector Dis = Start - ParentPos;
+				StartDis += Dis.Len();
+			}
+
+			//목표지점(end)까지 거리구하기
+			{
+				_ljVector End = { _End.X, _End.Y };
+				_ljVector Start = { Index.X, Index.Y };
+				_ljVector Dis = Start - End;
+				EndDis = Dis.Len();
+				AllDis = StartDis + EndDis;
+			}
+		}
+	};
+
+public:
+
+	bool FindWaterTile(_ljVector::MapIndex _Index)
+	{
+		findIter = m_AllTile.find(_Index.Index);
+		TileEnd = m_AllTile.end();
+
+		if (findIter != TileEnd)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+
+	bool DeleteWaterTile(_ljVector::MapIndex _Index)
+	{
+		findIter = m_AllTile.find(_Index.Index);
+		TileEnd = m_AllTile.end();
+
+		if (findIter != TileEnd)
+		{
+			delete findIter->second;
+			findIter->second = nullptr;
+			m_AllTile.erase(findIter);
+			return true;
+		}
+
+		return false;
+	}
+
+	// PathNode* 최적화겸
+	// 여러분들에게 말해줄건
+
+	// 메모리 단편화를 막기위해서가 보통 주 목적.
+	// 가장더 근간이 되는 생각.
+	// 메모리 풀 방식이 있는데. new char[10000]
+
+	// 오브젝트 풀 방식이 최대의 효과를 얻으려면
+	// 몬스터 x마리 이상 나오지 않을 거에요를 지키는 것.
+	// 오브젝트 풀 방식과 new를 미리 여러번 한다.()
+	// Pool 방식.
+	// 혼합할수 있다.
+	// 메모리 풀 방식은 안쓰고
+
+	std::vector<PathNode*>::iterator CurNode;
+	std::vector<PathNode*> PathNodePool;
+
+	// closeList에서 탐색한 주변의 타일을 추가하는 리스트
+	//            AllDis
+	std::multimap<float, PathNode*> m_OpenList;
+	// 아직 검사하지 않은 노드
+	// 주위를 탐색할 가치가 있는 노드들
+	// 그런왜 float(alldis)
+	// AllDis가 가장 짧은 녀석이 가장 빠른 길로 통할 가능성이 높다고 생각.
+	std::set<__int64> m_OpenIndexSet; // 아직 검사하지 않은 노드
+
+	// 이게 쓸모가 있는것은 아니다.
+	// 쓸모가 있기는 있다.
+	// 한가지 더 쓸모있는것은
+	// StartDis
+	std::multimap<__int64, PathNode*> m_CloseList; // 아직 검사하지 않은 노드
+	// std::set<__int64> m_CloseIndexSet; // 아직 검사하지 않은 노드
+
+	//목표지점 위치
+	_ljVector::MapIndex EndIndex;
+	//목표지점
+	PathNode* m_End;
+
+
+	// F가 가장 작은 노드
+	// 검사하지 않은 노드 중에서 
+
+	std::list<_ljVector> PathFind(_ljVector _Start, _ljVector _End);
+
+
+private:
+	bool IsOpenList(_ljVector::MapIndex _Index);
+
+	// 탐색을 위해서 빼는것.
+	PathNode* OpenListPop();
+	PathNode* OpenPathNodeCreate(_ljVector _Value, PathNode* _Parent);
+	PathNode* OpenPathNodeCreate(_ljVector::MapIndex _Value, PathNode* _Parent);
+	PathNode* PathNodeCreate(_ljVector _Value);
+	PathNode* PathNodeCreate(_ljVector::MapIndex _Value);
+	bool PathNodePathFind(PathNode* _Node);
+
+	void ResetPool();
+
+public:
+	_ljTileRenderer();
+	~_ljTileRenderer();
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#include "_ljTileRenderer.h"
+#include "_ljGameActor.h"
+#include <_ljTextureManager.h>
+#include "_ljGameState.h"
+#include <_ljGameMath.h>
+#include "_ljPlayer.h"
+//
+//std::map<__int64, _ljTileRenderer::TileData*>::iterator _ljTileRenderer::TileStart;
+//std::map<__int64, _ljTileRenderer::TileData*>::iterator _ljTileRenderer::TileEnd;
+//std::map<__int64, _ljTileRenderer::TileData*> _ljTileRenderer::m_AllTile;
+
+
+_ljTileRenderer::_ljTileRenderer() : m_Mask(0)
+{
+	//PathNodePool 초기화
+	//300번을 먼저 선언해줌.
+	for (size_t i = 0; i < 300; i++)
+	{
+		// POP FRONT
+		PathNodePool.push_back(new PathNode());
+	}
+	// PathNodePool.pop_front();
+	CurNode = PathNodePool.begin();
+
+}
+
+
+_ljTileRenderer::~_ljTileRenderer()
+{
+	std::map<__int64, _ljTileRenderer::TileData*>::iterator Start = m_AllTile.begin();
+	std::map<__int64, _ljTileRenderer::TileData*>::iterator End = m_AllTile.end();
+
+	for (; Start != End; ++Start)
+	{
+		if (nullptr != Start->second)
+		{
+			delete Start->second;
+			Start->second = nullptr;
+		}
+	}
+
+	{
+		std::vector<PathNode*>::iterator Start = PathNodePool.begin();
+		std::vector<PathNode*>::iterator End = PathNodePool.end();
+
+		for (; Start != End; ++Start)
+		{
+			delete (*Start);
+		}
+	}
+
+}
+
+
+_ljVector::MapIndex _ljTileRenderer::m_DirArr[TILEDIR_MAX]
+{
+	{1, 0}, // R
+	{0, -1}, // T
+	{-1, 0}, // L
+	{0, 1}, // B
+};
+
+
+_ljTileRenderer::TileData* _ljTileRenderer::FindTile(int _X, int _Y)
+{
+	_ljVector::MapIndex Index = { _X, _Y };
+
+	std::map<__int64, TileData*>::iterator Iter = m_AllTile.find(Index.Index);
+
+	if (Iter == m_AllTile.end())
+	{
+		return nullptr;
+	}
+	return Iter->second;
+}
+
+void _ljTileRenderer::AddTile(int _X, int _Y, int _SpriteIndex /*= 0*/)
+{
+	TileData* pFindTile = FindTile(_X, _Y);
+
+	if (nullptr == pFindTile)
+	{
+		_ljVector::MapIndex IndexKey = { _X, _Y };
+		pFindTile = new TileData();
+		m_AllTile.insert(std::map<__int64, _ljTileRenderer::TileData*>::value_type(IndexKey.Index, pFindTile));
+	}
+
+	if (m_pParent->ActorType() != EActorTypeIndex::WaterTile)
+	{
+		m_Mask = 1;
+		m_Mask &= _X + _Y;
+		if (1 == m_Mask)
+		{
+			_SpriteIndex += 1;
+		}
+
+	}
+	pFindTile->m_SpriteIndex = _SpriteIndex;
+
+}
+
+void _ljTileRenderer::AddTile(_ljVector _Pos, int _SpriteIndex)
+{
+	int X = 0;
+	int Y = 0;
+
+	X = static_cast<int>(round((_Pos.X + _ljGameState::CamPos().X) / _ljGameActor::TileSize()));
+	Y = static_cast<int>(round((_Pos.Y + _ljGameState::CamPos().Y) / _ljGameActor::TileSize()));
+
+	AddTile(X, Y, _SpriteIndex);
+}
+
+int _ljTileRenderer::Len(_ljVector::MapIndex _Index)
+{
+	findIter = m_AllTile.find(_Index.Index);
+	if (findIter == m_AllTile.end())
+	{
+		BOOM;
+	}
+	return findIter->second->m_Len;
+}
+
+void _ljTileRenderer::Render()
+{
+
+	TileStart = m_AllTile.begin();
+	TileEnd = m_AllTile.end();
+
+	_ljRectangle Rc;
+	Rc.Size = { _ljGameActor::TileSize(),_ljGameActor::TileSize() };
+
+	if (m_ShadowImg != nullptr)
+	{
+		m_ShadowRect = m_ShadowImg->GetRect(m_ShadowImgIndex);
+	}
+
+
+	for (; TileStart != TileEnd; ++TileStart)
+	{
+		m_Rect = m_Img->GetRect(TileStart->second->m_SpriteIndex);
+
+		_ljVector::MapIndex TI;
+		TI.Index = TileStart->first;
+		m_SubIndex.X = TI.X;
+		m_SubIndex.Y = TI.Y;
+
+		Rc.Pos.X = TI.X * _ljGameActor::TileSize() - _ljGameState::CamPos().X;
+		Rc.Pos.Y = TI.Y * _ljGameActor::TileSize() - _ljGameState::CamPos().Y;
+
+		// 플레이어와의 거리에 따라서 알파 농도만 바뀐다.
+
+
+		TransparentBlt(_ljTextureManager::BackDC()
+			, Rc.IL()
+			, Rc.IT()
+			, Rc.Size.IX()
+			, Rc.Size.IY()
+			, m_Img->HDC()
+			, m_Rect.Pos.IX() // 이미지의 x에서부터
+			, m_Rect.Pos.IY() // 이미지의 y에서부터
+			, m_Rect.Size.IX()  // 여기까지의 x 픽셀
+			, m_Rect.Size.IY()
+			, m_TransColor);
+
+
+		if (nullptr != m_ShadowImg)
+		{
+			m_PlayerIndex = _ljPlayer::PlayerIndex;
+			int adder = 2;
+			int Len = (m_PlayerIndex - TI).IndexLen();
+			FindPlayer[4] = TI;
+			MoveFindPlayer();
+			SetQuardant();
+			int chkLen = Len;
+
+			while (true)
+			{
+				if (FindPlayer[4] == m_PlayerIndex || chkLen < 0 || Len > 10)
+				{
+					break;
+				}
+
+				SetQuardant();
+				Len += CheckWall();
+
+				switch (m_Quardant)
+				{
+				case _ljGameRenderer::XPositive:
+				case _ljGameRenderer::One:
+					if (FindPlayer[4].X != m_PlayerIndex.X)
+					{
+						FindPlayer[4].X -= 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].X == m_PlayerIndex.X)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+
+					if (FindPlayer[4].Y != m_PlayerIndex.Y)
+					{
+
+						FindPlayer[4].Y += 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].Y == m_PlayerIndex.Y)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+					--chkLen;
+					break;
+				case _ljGameRenderer::XNegative:
+				case _ljGameRenderer::YNegative:
+				case _ljGameRenderer::Two:
+					if (FindPlayer[4].X != m_PlayerIndex.X)
+					{
+						FindPlayer[4].X += 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].X == m_PlayerIndex.X)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+					if (FindPlayer[4].Y != m_PlayerIndex.Y)
+					{
+						FindPlayer[4].Y += 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].Y == m_PlayerIndex.Y)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+					--chkLen;
+					break;
+				case _ljGameRenderer::YPositive:
+				case _ljGameRenderer::Three:
+					if (FindPlayer[4].X != m_PlayerIndex.X)
+					{
+						FindPlayer[4].X += 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].X == m_PlayerIndex.X)
+						{
+							break;
+						}
+						Len += CheckWall();
+
+					}
+					if (FindPlayer[4].Y != m_PlayerIndex.Y)
+					{
+						FindPlayer[4].Y -= 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].Y == m_PlayerIndex.Y)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+					--chkLen;
+					break;
+				case _ljGameRenderer::Four:
+					if (FindPlayer[4].X != m_PlayerIndex.X)
+					{
+						FindPlayer[4].X -= 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].X == m_PlayerIndex.X)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+					if (FindPlayer[4].Y != m_PlayerIndex.Y)
+					{
+						FindPlayer[4].Y -= 1;
+						MoveFindPlayer();
+
+						if (FindPlayer[4] == m_PlayerIndex || FindPlayer[4].Y == m_PlayerIndex.Y)
+						{
+							break;
+						}
+						Len += CheckWall();
+					}
+					--chkLen;
+					break;
+				default:
+					break;
+				}
+			}
+
+
+
+			if (Len >= 10)
+			{
+				BF.SourceConstantAlpha = 255;
+			}
+			else
+			{
+				// 0   10
+				// 0 ~ 1.0f
+				float Ratio = Len / 10.0f;
+				BF.SourceConstantAlpha = (int)(255 * Ratio);
+			}
+
+			findIter = m_AllTile.find(TI.Index);
+			if (findIter != m_AllTile.end())
+			{
+				findIter->second->m_Len = Len;
+			}
+
+
+
+			AlphaBlend(_ljTextureManager::BackDC()
+				, Rc.IL()
+				, Rc.IT()
+				, Rc.Size.IX()
+				, Rc.Size.IY()
+				, m_ShadowImg->HDC()
+				, m_ShadowRect.Pos.IX() // 이미지의 x에서부터
+				, m_ShadowRect.Pos.IY() // 이미지의 y에서부터
+				, m_ShadowRect.Size.IX()  // 여기까지의 x 픽셀
+				, m_ShadowRect.Size.IY()
+				, BF);
+		}
+	}
+
+	// 모든 타일을 돌지 않는게 좋다.
+	// 화면안에 보일만한 타일들만 돌리는게 좋다.
+	// 이소는 좀더 어렵다.
+}
+
+
+//OpenList에 존재하는지 여부를 확인함
+bool _ljTileRenderer::IsOpenList(_ljVector::MapIndex _Index)
+{
+	return m_OpenIndexSet.find(_Index.Index) != m_OpenIndexSet.end();
+}
+
+_ljTileRenderer::PathNode* _ljTileRenderer::PathNodeCreate(_ljVector _Value)
+{
+	return PathNodeCreate(PosToIndex(_Value));
+}
+
+
+_ljTileRenderer::PathNode* _ljTileRenderer::PathNodeCreate(_ljVector::MapIndex _Value)
+{
+	//pool에서 하나 꺼내온다고 함
+	_ljTileRenderer::PathNode* NewNode = *CurNode;
+	NewNode->Index = _Value;
+
+	++CurNode;
+
+	if (CurNode == PathNodePool.end())
+	{
+		BOOM;
+		CurNode = PathNodePool.begin();
+	}
+
+	return NewNode;
+}
+
+
+_ljTileRenderer::PathNode* _ljTileRenderer::OpenPathNodeCreate(_ljVector _Value, PathNode* _Parent)
+{
+	return OpenPathNodeCreate(PosToIndex(_Value), _Parent);
+}
+
+_ljTileRenderer::PathNode* _ljTileRenderer::OpenPathNodeCreate(_ljVector::MapIndex _Value, PathNode* _Parent) {
+	//생성되면서 위치 인덱스 값을 받아서 자기 인덱스에 넣어줌
+	PathNode* StartNode = PathNodeCreate(_Value);
+	StartNode->CalDisData(EndIndex, _Parent);
+	//맵에 경로값을 키로 넣어주기 때문에 짧은 순서대로 정렬되게 된다.
+	//가장 짧은값부터 찾아보게 된다는 것.
+	m_OpenList.insert(std::multimap<float, PathNode*>::value_type(StartNode->AllDis, StartNode));
+	m_OpenIndexSet.insert(StartNode->Index.Index);
+	return StartNode;
+}
+
+_ljVector::MapIndex _ljTileRenderer::PosToIndex(const _ljVector _Pos)
+{
+	_ljVector::MapIndex Index;
+
+	_ljVector RealPos = _Pos;
+	RealPos += _ljGameState::CamPos();
+
+	Index.X = static_cast<int>(roundf(RealPos.X / _ljGameActor::TileSize()));
+	Index.Y = static_cast<int>(roundf(RealPos.Y / _ljGameActor::TileSize()));
+
+	return Index;
+}
+
+
+//8방향으로 위치 찾아주는 기능
+bool _ljTileRenderer::PathNodePathFind(PathNode* _Node)
+{
+	// 4방향이냐?
+	// 8방향이냐?
+
+	_ljVector::MapIndex Cur = _Node->Index;
+	_ljVector::MapIndex CheckIndex;
+	std::map<__int64, TileData*>::iterator TileDataIter;
+
+	for (size_t i = 0; i < TILEDIR_MAX; i++)
+	{
+		CheckIndex = Cur + m_DirArr[i];
+
+		//인덱스 셋에 있다면 찾지마
+		if (m_OpenIndexSet.end() != m_OpenIndexSet.find(CheckIndex.Index))
+		{
+			continue;
+		}
+
+		//클로즈 리스트에 있다면 찾지마
+		if (m_CloseList.end() != m_CloseList.find(CheckIndex.Index))
+		{
+			continue;
+		}
+
+		//타일이 아니라면 찾지마
+		TileDataIter = m_AllTile.find(CheckIndex.Index);
+		if (m_AllTile.end() == TileDataIter)
+		{
+			continue;
+		}
+
+		//if (false == TileDataIter->second->m_Move)
+		//{
+		//	continue;
+		//}
+		//오픈리스트에 추가해줘
+		m_End = OpenPathNodeCreate(CheckIndex, _Node);
+
+		//마지막 위치를 찾았다면 멈춰.
+		//여기에 들어오지 못한다면 m_End는 계속 새로운 경로값이 들어감
+		if (CheckIndex == EndIndex)
+		{
+			return true;
+		}
+
+	}
+
+	m_End = nullptr;
+
+	return false;
+
+}
+
+
+//오픈리스트에서 하나 꺼내서 closelist에 넣는 함수
+_ljTileRenderer::PathNode* _ljTileRenderer::OpenListPop()
+{
+	if (0 >= m_OpenList.size())
+	{
+		return nullptr;
+	}
+
+	std::multimap<float, PathNode*>::iterator PopNode = m_OpenList.begin();
+	PathNode* ReturnNode = PopNode->second;
+	m_OpenList.erase(PopNode);
+	m_OpenIndexSet.erase(ReturnNode->Index.Index);
+
+	//클로즈리스트에 넣고
+	m_CloseList.insert(std::multimap<__int64, PathNode*>::value_type(ReturnNode->Index.Index, ReturnNode));
+	//찾아
+	PathNodePathFind(ReturnNode);
+
+	// 이제 찾아도 돼겠네????
+	return ReturnNode;
+}
+
+//Astar 로직의 시작
+//Campos를 적용하지 않은 그냥 위치를 넣어주면 알아서 campos를 더해준다.
+std::list<_ljVector> _ljTileRenderer::PathFind(_ljVector _Start, _ljVector _End)
+{
+	//정보확인용
+	m_OpenList;
+	m_CloseList;
+
+	std::list<_ljVector> Path;
+
+	if (PosToIndex(_Start) == PosToIndex(_End))
+	{
+		return Path;
+	}
+
+	EndIndex = PosToIndex(_End);
+	OpenPathNodeCreate(_Start, nullptr);
+
+	// 내가하려는 문제는
+	// n을 추론할수 없다.
+	// n회 찾아야한다
+	// 내가그 n을 알수 있어?
+
+	// 끝에 도착할 때까지.
+	// 너무 멀어서 노드가 부족한 경우까지 포함. 
+	while (nullptr == m_End && 0 < m_OpenList.size())
+	{
+		//하나 꺼내서 클로즈에 넣고
+		//pathfind를 해서 오픈리스트에 주변 8곳을 넣음
+		//마지막 위치를 찾지못하면 m_End에 nullptr이 들어감
+		OpenListPop();
+	}
+
+	while (nullptr != m_End)
+	{
+		_ljVector::MapIndex TI = m_End->Index;
+		_ljVector Pos;
+
+		Pos.X = (TI.X * _ljGameActor::TileSize());
+		Pos.Y = (TI.Y * _ljGameActor::TileSize());
+		Path.push_front(Pos);
+
+		m_End = m_End->Parent;
+	}
+
+	m_End = nullptr;
+
+	ResetPool();
+
+	return Path;
+}
+
+
+//끝나고 풀을 되돌리는 함수
+void _ljTileRenderer::ResetPool()
+{
+	CurNode = PathNodePool.begin();
+	m_OpenList.clear();
+	m_OpenIndexSet.clear();
+	m_CloseList.clear();
+}
+
+
+HSKEY

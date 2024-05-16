@@ -1,0 +1,1 @@
+COPY ..\thirdparty\libxl-4.2.0\lib\*.* ..\bin\Debug\x64\

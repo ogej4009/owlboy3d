@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <FxCompile Include="Default.hlsl" />
+    <FxCompile Include="Ghostburn.hlsl" />
+    <FxCompile Include="Horizon.hlsl" />
+    <FxCompile Include="Vertical.hlsl" />
+    <FxCompile Include="Distortion.hlsl" />
+    <FxCompile Include="TileMap.hlsl" />
+    <FxCompile Include="TargetMerge.hlsl" />
+    <FxCompile Include="Fog.hlsl" />
+    <FxCompile Include="Dash.hlsl" />
+    <FxCompile Include="DebugMesh.hlsl" />
+    <FxCompile Include="Deferred.hlsl" />
+    <FxCompile Include="DeferredFront.hlsl" />
+    <FxCompile Include="DeferredLighting.hlsl" />
+    <FxCompile Include="DeferredMerge.hlsl" />
+    <FxCompile Include="DeferredStatic.hlsl" />
+    <FxCompile Include="Emission.hlsl" />
+    <FxCompile Include="EmissionBloom.hlsl" />
+    <FxCompile Include="EmissionBloomCheck.hlsl" />
+    <FxCompile Include="EmissionMap.hlsl" />
+    <FxCompile Include="EmissionMapBloom.hlsl" />
+    <FxCompile Include="EmissionMapBloomCheck.hlsl" />
+    <FxCompile Include="Fire.hlsl" />
+    <FxCompile Include="Forward.hlsl" />
+    <FxCompile Include="Grid.hlsl" />
+    <FxCompile Include="MapDeferredTexture.hlsl" />
+    <FxCompile Include="MotionBlur.hlsl" />
+    <FxCompile Include="MotionBlurDraw.hlsl" />
+    <FxCompile Include="OutLine.hlsl" />
+    <FxCompile Include="OutLineDraw.hlsl" />
+    <FxCompile Include="Particle.hlsl" />
+    <FxCompile Include="UI.hlsl" />
+    <FxCompile Include="Shadow.hlsl" />
+    <FxCompile Include="Sky.hlsl" />
+    <FxCompile Include="StaticDeferredTexturePaperBurn.hlsl" />
+    <FxCompile Include="TargetDebugBack.hlsl" />
+    <FxCompile Include="TargetDebugTexture.hlsl" />
+    <FxCompile Include="ExplosionGradien.hlsl" />
+    <FxCompile Include="YellowLight.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include=".h">
+      <UniqueIdentifier>{bb6cea7d-431d-4e74-a196-8469d9f6a54e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RenderBase.hlsli">
+      <Filter>.h</Filter>
+    </None>
+    <None Include="LightBase.hlsli">
+      <Filter>.h</Filter>
+    </None>
+    <None Include="AnimBase.hlsli">
+      <Filter>.h</Filter>
+    </None>
+    <None Include="BumpBase.hlsli">
+      <Filter>.h</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GameShader.rc" />
+  </ItemGroup>
+</Project>

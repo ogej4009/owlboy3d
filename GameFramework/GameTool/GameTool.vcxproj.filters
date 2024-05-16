@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="메모">
+      <UniqueIdentifier>{0441d203-bf30-4853-8545-893231afe838}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GameTool.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\GameTool.rc2">
+      <Filter>리소스 파일</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\GameTool.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\toolbar.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\color-palette.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="DLG.txt">
+      <Filter>메모</Filter>
+    </Text>
+    <Text Include="BACKDROP.txt">
+      <Filter>메모</Filter>
+    </Text>
+    <Text Include="HIGHMAP.txt">
+      <Filter>메모</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ChildView.cpp" />
+    <ClCompile Include="Dlg0.cpp" />
+    <ClCompile Include="Dlg1.cpp" />
+    <ClCompile Include="Dlg2.cpp" />
+    <ClCompile Include="Dlg3.cpp" />
+    <ClCompile Include="Dlg4.cpp" />
+    <ClCompile Include="GameTool.cpp" />
+    <ClCompile Include="LevelDesignView_IO.cpp" />
+    <ClCompile Include="LView.cpp" />
+    <ClCompile Include="MainFrm.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="RView.cpp" />
+    <ClCompile Include="LevelDesignView.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChildView.h" />
+    <ClInclude Include="Dlg0.h" />
+    <ClInclude Include="Dlg1.h" />
+    <ClInclude Include="Dlg2.h" />
+    <ClInclude Include="Dlg3.h" />
+    <ClInclude Include="Dlg4.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="GameTool.h" />
+    <ClInclude Include="LView.h" />
+    <ClInclude Include="MainFrm.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="RView.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="LevelDesignView.h" />
+  </ItemGroup>
+</Project>

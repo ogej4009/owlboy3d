@@ -1,0 +1,41 @@
+#pragma once
+
+enum class RENDER_ORDER
+{
+	RO_ACTOR,
+	RO_COL_LEVEL,
+	RO_UI,
+};
+
+enum class COLLISION_ORDER
+{
+	CO_PLAYER,
+	CO_TARGET,
+	CO_ENEMIES,
+	CO_TRIGGER,
+	CO_ATTACK,
+	CO_CURSOR,
+	CO_SELECT,
+	CO_BACKDROP,
+};
+
+enum class LAYER_TYPE
+{
+	BGCLOUDS,
+	PARABACK,
+	PARAFRONT,
+	WATERFALL,
+};
+
+enum class BOX
+{
+	HIDE_SPRITE_LAYER,
+	SNAP_TO_GRID,
+};
+
+enum class BATCH_SPACING
+{
+	X,
+	Y,
+};
+

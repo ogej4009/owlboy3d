@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="소스 파일\OP">
+      <UniqueIdentifier>{d210b211-04e8-4308-812f-866ee5c08ead}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\OP">
+      <UniqueIdentifier>{0c3cead3-8057-47b1-8ce6-138beac90e82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE">
+      <UniqueIdentifier>{5c55c511-39df-4a16-b110-fc43adc0ab5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE">
+      <UniqueIdentifier>{e91c5c45-f498-4ef1-8823-2ebb7199dc2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\0">
+      <UniqueIdentifier>{4a1df71b-ef38-4238-b245-247294b9197a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\1">
+      <UniqueIdentifier>{4dbaa557-c330-4701-afd8-307ec3ad1ed0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\2">
+      <UniqueIdentifier>{a2d3f872-503f-4308-a572-30fdb5e5ae25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\3">
+      <UniqueIdentifier>{a9659be4-d18d-4be8-998d-31c02c9ce085}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\4">
+      <UniqueIdentifier>{6cd672e8-fb84-46c4-bb06-1e93ad2b3ee0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\5">
+      <UniqueIdentifier>{cf1693f9-6a87-46d0-8f4e-2298208a154a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\6">
+      <UniqueIdentifier>{aebf04f1-f4a2-4663-8d66-b149b1da3722}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\7">
+      <UniqueIdentifier>{7398fcc8-3251-4b40-873a-cdf1bfb1eb15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\8">
+      <UniqueIdentifier>{354e150b-4b7e-4822-b876-7597da8ea27c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\9">
+      <UniqueIdentifier>{7e052f41-228a-4abd-b5de-862eb6c50bbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\0">
+      <UniqueIdentifier>{4aee09a7-d3d8-46db-a547-5256490b5b26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\1">
+      <UniqueIdentifier>{39a7fb98-5069-485d-bea4-5ceac934a72d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\2">
+      <UniqueIdentifier>{10324bbc-1c1a-44c7-845e-b3573ce30eb3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\3">
+      <UniqueIdentifier>{cc1fb521-0f2d-44e6-9115-5498647d8fb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\4">
+      <UniqueIdentifier>{cc38cd64-ad4c-46bd-9e50-03af53a572f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\5">
+      <UniqueIdentifier>{16e003ba-d85c-4d14-b8bd-39e37b405c27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\6">
+      <UniqueIdentifier>{708acb1c-b156-4082-aa8c-698af90c0e0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\7">
+      <UniqueIdentifier>{cdd842a0-d022-4c52-ba46-26c138f60a0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\8">
+      <UniqueIdentifier>{6584e641-efde-4e3f-aaec-423519ba252d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\9">
+      <UniqueIdentifier>{6a5a61c6-1a54-4e98-ae7c-1f5a7c091c3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\STAGE\10">
+      <UniqueIdentifier>{8e55cc2c-2cf1-4012-a16a-6c59a69cdab6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\STAGE\10">
+      <UniqueIdentifier>{86fd8b77-6411-4033-899b-e8403d8e33aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="데모">
+      <UniqueIdentifier>{42ab3921-ce61-426a-b3fb-70fefa5f1f97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="타일맵">
+      <UniqueIdentifier>{4e58c702-cca0-4bdf-80c1-0996d0535ade}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Epilogue.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="FinalScene.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="MainMenu.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="Outro.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="Prologue.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="Shop.cpp">
+      <Filter>소스 파일\OP</Filter>
+    </ClCompile>
+    <ClCompile Include="TutorScene.cpp">
+      <Filter>소스 파일\STAGE\0</Filter>
+    </ClCompile>
+    <ClCompile Include="DreamScene.cpp">
+      <Filter>소스 파일\STAGE\1</Filter>
+    </ClCompile>
+    <ClCompile Include="OtusHouseScene.cpp">
+      <Filter>소스 파일\STAGE\2</Filter>
+    </ClCompile>
+    <ClCompile Include="VellieScene.cpp">
+      <Filter>소스 파일\STAGE\3</Filter>
+    </ClCompile>
+    <ClCompile Include="TroposScene.cpp">
+      <Filter>소스 파일\STAGE\4</Filter>
+    </ClCompile>
+    <ClCompile Include="DungeonLv1.cpp">
+      <Filter>소스 파일\STAGE\5</Filter>
+    </ClCompile>
+    <ClCompile Include="DungeonLv2.cpp">
+      <Filter>소스 파일\STAGE\6</Filter>
+    </ClCompile>
+    <ClCompile Include="DungeonLv3.cpp">
+      <Filter>소스 파일\STAGE\7</Filter>
+    </ClCompile>
+    <ClCompile Include="DungeonLv4.cpp">
+      <Filter>소스 파일\STAGE\8</Filter>
+    </ClCompile>
+    <ClCompile Include="DungeonLv5.cpp">
+      <Filter>소스 파일\STAGE\9</Filter>
+    </ClCompile>
+    <ClCompile Include="GraveyardScene.cpp">
+      <Filter>소스 파일\STAGE\10</Filter>
+    </ClCompile>
+    <ClCompile Include="mainsrc.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DemoScene.cpp">
+      <Filter>데모</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Epilogue.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="FinalScene.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="MainMenu.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="Outro.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="Prologue.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="Shop.h">
+      <Filter>헤더 파일\OP</Filter>
+    </ClInclude>
+    <ClInclude Include="TutorScene.h">
+      <Filter>헤더 파일\STAGE\0</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamScene.h">
+      <Filter>헤더 파일\STAGE\1</Filter>
+    </ClInclude>
+    <ClInclude Include="VellieScene.h">
+      <Filter>헤더 파일\STAGE\3</Filter>
+    </ClInclude>
+    <ClInclude Include="OtusHouseScene.h">
+      <Filter>헤더 파일\STAGE\2</Filter>
+    </ClInclude>
+    <ClInclude Include="TroposScene.h">
+      <Filter>헤더 파일\STAGE\4</Filter>
+    </ClInclude>
+    <ClInclude Include="DungeonLv1.h">
+      <Filter>헤더 파일\STAGE\5</Filter>
+    </ClInclude>
+    <ClInclude Include="DungeonLv2.h">
+      <Filter>헤더 파일\STAGE\6</Filter>
+    </ClInclude>
+    <ClInclude Include="DungeonLv3.h">
+      <Filter>헤더 파일\STAGE\7</Filter>
+    </ClInclude>
+    <ClInclude Include="DungeonLv4.h">
+      <Filter>헤더 파일\STAGE\8</Filter>
+    </ClInclude>
+    <ClInclude Include="DungeonLv5.h">
+      <Filter>헤더 파일\STAGE\9</Filter>
+    </ClInclude>
+    <ClInclude Include="GraveyardScene.h">
+      <Filter>헤더 파일\STAGE\10</Filter>
+    </ClInclude>
+    <ClInclude Include="TutorSceneObjUnity.h">
+      <Filter>헤더 파일\STAGE\0</Filter>
+    </ClInclude>
+    <ClInclude Include="DemoSceneObjUnity.h">
+      <Filter>데모</Filter>
+    </ClInclude>
+    <ClInclude Include="DemoScene.h">
+      <Filter>데모</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="텍스트.txt">
+      <Filter>타일맵</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

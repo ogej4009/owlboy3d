@@ -1,0 +1,20 @@
+BOOL Dlg0::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	// TODO:  여기에 추가 초기화 작업을 추가합니다.
+
+	SetIcon(0, TRUE);
+	SetIcon(0, FALSE);
+
+	m_ChkList.SubclassDlgItem(IDC_BD_VIEW_LAYER_LIST, this);
+	m_ChkList.InsertString(0, L"0");
+	m_ChkList.InsertString(1, L"1");
+	m_ChkList.InsertString(2, L"2");
+	m_ChkList.InsertString(3, L"3");
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+	// 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
+}
+
+

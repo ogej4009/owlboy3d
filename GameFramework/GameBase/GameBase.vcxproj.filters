@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CPtr.h" />
+    <ClInclude Include="GameDebug.h" />
+    <ClInclude Include="GameFile.h" />
+    <ClInclude Include="GameInput.h" />
+    <ClInclude Include="GameIO.h" />
+    <ClInclude Include="GameMath.h" />
+    <ClInclude Include="GameMovie.h" />
+    <ClInclude Include="GameName.h" />
+    <ClInclude Include="GameObjListTFuncMgr.h" />
+    <ClInclude Include="GameObjTFuncMgr.h" />
+    <ClInclude Include="GameSound.h" />
+    <ClInclude Include="GameString.h" />
+    <ClInclude Include="GameTime.h" />
+    <ClInclude Include="GameVideo.h" />
+    <ClInclude Include="GameWin.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameDebug.cpp" />
+    <ClCompile Include="GameInput.cpp" />
+    <ClCompile Include="GameIO.cpp" />
+    <ClCompile Include="GameMath.cpp" />
+    <ClCompile Include="GameMovie.cpp" />
+    <ClCompile Include="GameSound.cpp" />
+    <ClCompile Include="GameString.cpp" />
+    <ClCompile Include="GameTime.cpp" />
+    <ClCompile Include="GameVideo.cpp" />
+    <ClCompile Include="GameWin.cpp" />
+  </ItemGroup>
+</Project>

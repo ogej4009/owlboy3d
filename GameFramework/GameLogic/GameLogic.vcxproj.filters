@@ -1,0 +1,528 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일\MATE">
+      <UniqueIdentifier>{5204999a-4d40-4a4b-867c-61c02505b43d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\MATE">
+      <UniqueIdentifier>{0d80e415-b845-4700-b5bc-d50cd63b56cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\PRIME">
+      <UniqueIdentifier>{ee6464c0-72de-4379-945e-f4536a562800}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\PRIME">
+      <UniqueIdentifier>{4814cd9b-7c45-48de-9511-347118d53d3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\DB">
+      <UniqueIdentifier>{964a0282-cb5a-4787-8489-d4c69d41e891}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\DB">
+      <UniqueIdentifier>{9ac99d99-33c5-4287-9c28-c73d566e420f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CLIP">
+      <UniqueIdentifier>{5df8b98e-b22d-4560-952b-7f4554824b15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CLIP">
+      <UniqueIdentifier>{63279259-4c79-4c7b-b6d3-30797cb6ce98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\PLAYER">
+      <UniqueIdentifier>{e606d949-b4ab-4e98-9cad-78e7ae70dbee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\PLAYER">
+      <UniqueIdentifier>{cfef1320-72d6-4cc2-bae9-706d7c242b7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\PLAYER\SUB">
+      <UniqueIdentifier>{f8c9b94d-c457-4a9c-9633-ea394aef84bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\PLAYER\SUB">
+      <UniqueIdentifier>{d1c9f973-1828-4f96-9af3-f9c104df63aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CAM">
+      <UniqueIdentifier>{e8db4e43-d2b1-4636-beba-07d4ea1c943f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CAM">
+      <UniqueIdentifier>{469656b2-1507-4e5b-8dc4-95a4299bcd94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\OTHER">
+      <UniqueIdentifier>{71bec93a-8d10-42fe-ad55-620dee0e23da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\OTHER">
+      <UniqueIdentifier>{cc1ad496-9c54-4597-a34b-1e6eaa8bdbf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\TRIGGER">
+      <UniqueIdentifier>{039fb4dc-3342-4ede-a023-fceda83451d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\TRIGGER">
+      <UniqueIdentifier>{59046456-d27e-4b78-ba59-97713c5b8c5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\FRAME">
+      <UniqueIdentifier>{7c88a4f0-d3e3-4acd-afbe-5e9c11d4912b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\FRAME">
+      <UniqueIdentifier>{0a3803ab-ad98-4dfa-91ca-6d601fba3aca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\INVEN">
+      <UniqueIdentifier>{ab9bd202-347f-4f9d-9531-94a111781a3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\INVEN">
+      <UniqueIdentifier>{fe735ca0-fdf6-4343-867d-671e3ed7441d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\UI">
+      <UniqueIdentifier>{c7ca8ed5-e503-4e01-8094-2b0bc46cc86c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\UI">
+      <UniqueIdentifier>{1f81e66f-06ad-40c5-acd4-eeab36ae2cc5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HUD">
+      <UniqueIdentifier>{40a701ba-beec-4679-b5d8-49bfdd601ddb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HUD">
+      <UniqueIdentifier>{5ea009c9-bdcd-48a9-9ef4-185a4fb8da8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\ENEMY">
+      <UniqueIdentifier>{821e6514-3125-4312-98b8-ef487f884a8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\ENEMY">
+      <UniqueIdentifier>{bd9ec90d-1cc6-49c9-a0b9-d1690f8d3f82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\UNITY">
+      <UniqueIdentifier>{c84d5507-8d67-4ed2-bd6e-536e72c8aa22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\EVENT">
+      <UniqueIdentifier>{affb7963-e0db-4146-bfd9-44dd77c9158c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\EVENT">
+      <UniqueIdentifier>{d6adbd80-d0e5-4773-a03f-d539f50f67d4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Mechanic.h">
+      <Filter>헤더 파일\MATE</Filter>
+    </ClInclude>
+    <ClInclude Include="Spider.h">
+      <Filter>헤더 파일\MATE</Filter>
+    </ClInclude>
+    <ClInclude Include="Backdrop.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="ValueData.h">
+      <Filter>헤더 파일\DB</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumData.h">
+      <Filter>헤더 파일\DB</Filter>
+    </ClInclude>
+    <ClInclude Include="Shorts0.h">
+      <Filter>헤더 파일\CLIP</Filter>
+    </ClInclude>
+    <ClInclude Include="Hero.h">
+      <Filter>헤더 파일\PLAYER</Filter>
+    </ClInclude>
+    <ClInclude Include="Pirate.h">
+      <Filter>헤더 파일\MATE</Filter>
+    </ClInclude>
+    <ClInclude Include="Cursor.h">
+      <Filter>헤더 파일\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Arms.h">
+      <Filter>헤더 파일\PLAYER\SUB</Filter>
+    </ClInclude>
+    <ClInclude Include="Air.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Bubble.h">
+      <Filter>헤더 파일\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="DesignCam.h">
+      <Filter>헤더 파일\CAM</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollCam.h">
+      <Filter>헤더 파일\CAM</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientCam.h">
+      <Filter>헤더 파일\CAM</Filter>
+    </ClInclude>
+    <ClInclude Include="Destructables.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Bullet.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Debris.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemy.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="PickUp.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Mentor.h">
+      <Filter>헤더 파일\OTHER</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="Fade.h">
+      <Filter>헤더 파일\FRAME</Filter>
+    </ClInclude>
+    <ClInclude Include="FrontShader.h">
+      <Filter>헤더 파일\FRAME</Filter>
+    </ClInclude>
+    <ClInclude Include="Inventory.h">
+      <Filter>헤더 파일\INVEN</Filter>
+    </ClInclude>
+    <ClInclude Include="Item.h">
+      <Filter>헤더 파일\INVEN</Filter>
+    </ClInclude>
+    <ClInclude Include="DamageNumber.h">
+      <Filter>헤더 파일\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Clouds.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MaskedTortoise.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Gawk.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Guardian.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Molt.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Spikeball.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamBomb.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Torque.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Aegis.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Barb.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="Gnome.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="RastaPirate.h">
+      <Filter>헤더 파일\ENEMY</Filter>
+    </ClInclude>
+    <ClInclude Include="GameUnity.h">
+      <Filter>헤더 파일\UNITY</Filter>
+    </ClInclude>
+    <ClInclude Include="MacroData.h">
+      <Filter>헤더 파일\DB</Filter>
+    </ClInclude>
+    <ClInclude Include="CutScene.h">
+      <Filter>헤더 파일\CLIP</Filter>
+    </ClInclude>
+    <ClInclude Include="CircleFade.h">
+      <Filter>헤더 파일\FRAME</Filter>
+    </ClInclude>
+    <ClInclude Include="RectFade.h">
+      <Filter>헤더 파일\FRAME</Filter>
+    </ClInclude>
+    <ClInclude Include="UICam.h">
+      <Filter>헤더 파일\CAM</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemSlot.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Button.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Chest.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Coin.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Fruit.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Gate.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Rain.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="RainCloud.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Ring.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Weight.h">
+      <Filter>헤더 파일\EVENT</Filter>
+    </ClInclude>
+    <ClInclude Include="HudTrigger.h">
+      <Filter>헤더 파일\TRIGGER</Filter>
+    </ClInclude>
+    <ClInclude Include="UITrigger.h">
+      <Filter>헤더 파일\TRIGGER</Filter>
+    </ClInclude>
+    <ClInclude Include="BorderTrigger.h">
+      <Filter>헤더 파일\TRIGGER</Filter>
+    </ClInclude>
+    <ClInclude Include="SaveData.h">
+      <Filter>헤더 파일\DB</Filter>
+    </ClInclude>
+    <ClInclude Include="NPC.h">
+      <Filter>헤더 파일\PRIME</Filter>
+    </ClInclude>
+    <ClInclude Include="ColLevelEditor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FreeCam.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Mechanic.cpp">
+      <Filter>소스 파일\MATE</Filter>
+    </ClCompile>
+    <ClCompile Include="Spider.cpp">
+      <Filter>소스 파일\MATE</Filter>
+    </ClCompile>
+    <ClCompile Include="Backdrop.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="ValueData.cpp">
+      <Filter>소스 파일\DB</Filter>
+    </ClCompile>
+    <ClCompile Include="Shorts0.cpp">
+      <Filter>소스 파일\CLIP</Filter>
+    </ClCompile>
+    <ClCompile Include="Hero.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="Pirate.cpp">
+      <Filter>소스 파일\MATE</Filter>
+    </ClCompile>
+    <ClCompile Include="Cursor.cpp">
+      <Filter>소스 파일\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Arms.cpp">
+      <Filter>소스 파일\PLAYER\SUB</Filter>
+    </ClCompile>
+    <ClCompile Include="Air.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Bubble.cpp">
+      <Filter>소스 파일\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="DesignCam.cpp">
+      <Filter>소스 파일\CAM</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollCam.cpp">
+      <Filter>소스 파일\CAM</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientCam.cpp">
+      <Filter>소스 파일\CAM</Filter>
+    </ClCompile>
+    <ClCompile Include="Bullet.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="Debris.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="Destructables.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="PickUp.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="Enemy.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="Mentor.cpp">
+      <Filter>소스 파일\OTHER</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc.cpp">
+      <Filter>소스 파일\PRIME</Filter>
+    </ClCompile>
+    <ClCompile Include="FrontShader.cpp">
+      <Filter>소스 파일\FRAME</Filter>
+    </ClCompile>
+    <ClCompile Include="Fade.cpp">
+      <Filter>소스 파일\FRAME</Filter>
+    </ClCompile>
+    <ClCompile Include="Inventory.cpp">
+      <Filter>소스 파일\INVEN</Filter>
+    </ClCompile>
+    <ClCompile Include="Item.cpp">
+      <Filter>소스 파일\INVEN</Filter>
+    </ClCompile>
+    <ClCompile Include="DamageNumber.cpp">
+      <Filter>소스 파일\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Clouds.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MaskedTortoise.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Gawk.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Guardian.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Molt.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Spikeball.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="SteamBomb.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Torque.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Aegis.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Barb.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="Gnome.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="RastaPirate.cpp">
+      <Filter>소스 파일\ENEMY</Filter>
+    </ClCompile>
+    <ClCompile Include="CutScene.cpp">
+      <Filter>소스 파일\CLIP</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroFsmFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroCamFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroColFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroDebugFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroInitFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroPhysicsFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroBubbleFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroPixelFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroCustomFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="CircleFade.cpp">
+      <Filter>소스 파일\FRAME</Filter>
+    </ClCompile>
+    <ClCompile Include="RectFade.cpp">
+      <Filter>소스 파일\FRAME</Filter>
+    </ClCompile>
+    <ClCompile Include="UICam.cpp">
+      <Filter>소스 파일\CAM</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemSlot.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Button.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Chest.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Coin.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Fruit.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Gate.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Rain.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="RainCloud.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Ring.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Weight.cpp">
+      <Filter>소스 파일\EVENT</Filter>
+    </ClCompile>
+    <ClCompile Include="UITrigger.cpp">
+      <Filter>소스 파일\TRIGGER</Filter>
+    </ClCompile>
+    <ClCompile Include="HudTrigger.cpp">
+      <Filter>소스 파일\TRIGGER</Filter>
+    </ClCompile>
+    <ClCompile Include="BorderTrigger.cpp">
+      <Filter>소스 파일\TRIGGER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroHudFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="HeroUIFunc.cpp">
+      <Filter>소스 파일\PLAYER</Filter>
+    </ClCompile>
+    <ClCompile Include="ColLevelEditor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="FreeCam.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="유령쉐이더.txt" />
+    <Text Include="왜곡쉐이더.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GameLogic.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

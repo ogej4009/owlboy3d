@@ -1,0 +1,957 @@
+
+XPtr<XScene> XScene::m_CurScene = nullptr;
+XPtr<XScene> XScene::m_NextScene = nullptr;
+XVec XScene::m_PlayerPos = XVec::NONE;
+
+XPtr<XActor> XScene::m_Player = nullptr;
+
+
+XScene::XScene()
+{
+}
+
+XScene::~XScene()
+{
+}
+
+void XScene::ChangeScene(const XString& _Name)
+{
+	m_NextScene = Find(_Name);
+
+	if (nullptr == m_NextScene)
+	{
+		ASSERTMSG(L"존재하지 않는 씬을 체인지 하려고 했습니다.");
+	}
+}
+
+XPtr<XActor> XScene::CreateActor(const XString& _Name)
+{
+	XPtr<XActor> Actor = XListObjMgrUpdater<XActor>::CreateObj<XActor>(_Name);
+	Actor->m_SCENE = this;
+	Actor->CreateCom<XTransform>();
+	return Actor;
+}
+
+void XScene::Progress()
+{
+	if (nullptr != m_NextScene)
+	{
+		if (nullptr == m_CurScene)
+		{
+			m_CurScene = m_NextScene;
+			m_CurScene->SceneChangeStart();
+		}
+		else
+		{
+			m_CurScene->SceneChangeEnd();
+			m_CurScene = m_NextScene;
+			m_CurScene->SceneChangeStart();
+		}
+	}
+
+	XInputMgr::Update();
+	XTime::Update();
+
+	m_CurScene->UpdatePrev();
+	m_CurScene->Update();
+	m_CurScene->UpdateNext();
+	m_CurScene->RenderPrev();
+	m_CurScene->Render();
+	m_CurScene->RenderNext();
+	m_CurScene->CollisionPrev();
+	m_CurScene->Collision();
+	m_CurScene->CollisionNext();
+
+	m_CurScene->Release();
+}
+
+
+
+void XScene::Collision()
+{
+
+
+	for (auto& LeftIndex : m_ColLink)
+	{
+
+		std::map<int, std::list<XPtr<XColMgr>>>::iterator LeftGroup = m_AllCol.find(LeftIndex.first);
+		if (LeftGroup == m_AllCol.end())
+		{
+			continue;
+		}
+
+		// 자료형 std::list<XPtr<XColMgr>>
+		if (true == LeftGroup->second.empty())
+		{
+			continue;
+		}
+
+		for (int RightIndex : LeftIndex.second)
+		{
+			std::map<int, std::list<XPtr<XColMgr>>>::iterator RightGroup = m_AllCol.find(RightIndex);
+
+			if (RightGroup == m_AllCol.end())
+			{
+				continue;
+			}
+
+			if (true == RightGroup->second.empty())
+			{
+				continue;
+			}
+
+
+			if (LeftIndex.first == RightIndex)
+			{
+				std::list<XPtr<XColMgr>>::iterator LeftStart = LeftGroup->second.begin();
+				if (false == (*LeftStart)->IsUpdate())
+				{
+					continue;
+				}
+				std::list<XPtr<XColMgr>>::iterator LeftEnd = RightGroup->second.end();
+				--LeftEnd;
+
+				// 0 1 2 
+				for (; LeftStart != LeftEnd; ++LeftStart)
+				{
+					std::list<XPtr<XColMgr>>::iterator RightStart = LeftStart;
+					std::list<XPtr<XColMgr>>::iterator RightEnd = RightGroup->second.end();
+					++RightStart;
+
+					for (; RightStart != RightEnd; ++RightStart)
+					{
+						if (false == (*RightStart)->IsUpdate())
+						{
+							continue;
+						}
+						(*LeftStart)->ColCheck(*RightStart);
+					}
+				}
+
+
+			}
+			else
+			{
+
+
+				// 자기 그룹과의 충돌은 생각 안한겁니다.
+				for (auto& LeftCol : LeftGroup->second)
+				{
+					if (false == LeftCol->IsUpdate())
+					{
+						continue;
+					}
+					for (auto& RightCol : RightGroup->second)
+					{
+						if (false == RightCol->IsUpdate())
+						{
+							continue;
+						}
+						LeftCol->ColCheck(RightCol);
+					}
+				}
+			}
+
+
+		}
+
+	}
+}
+
+void XScene::UpdatePrev()
+{
+	XListObjMgrUpdater<XSceneCom>::UpdatePrev();
+	XListObjMgrUpdater<XActor>::UpdatePrev();
+}
+
+void XScene::Update()
+{
+	XListObjMgrUpdater<XSceneCom>::Update();
+	XListObjMgrUpdater<XActor>::Update();
+}
+
+void XScene::UpdateNext()
+{
+	XListObjMgrUpdater<XSceneCom>::UpdateNext();
+	XListObjMgrUpdater<XActor>::UpdateNext();
+}
+
+void XScene::RenderPrev()
+{
+	XListObjMgrUpdater<XSceneCom>::RenderPrev();
+	XListObjMgrUpdater<XActor>::RenderPrev();
+
+	for (auto& _TransForm : m_AllTrans)
+	{
+		_TransForm->TransUpdate();
+	}
+}
+
+void XScene::RenderNext()
+{
+	XListObjMgrUpdater<XSceneCom>::RenderNext();
+	XListObjMgrUpdater<XActor>::RenderNext();
+}
+
+void XScene::CollisionPrev()
+{
+	XListObjMgrUpdater<XSceneCom>::CollisionPrev();
+	XListObjMgrUpdater<XActor>::CollisionPrev();
+}
+
+void XScene::CollisionNext()
+{
+	XListObjMgrUpdater<XSceneCom>::CollisionNext();
+	XListObjMgrUpdater<XActor>::CollisionNext();
+}
+
+void XScene::SceneChangeEnd()
+{
+	XListObjMgrUpdater<XSceneCom>::SceneChangeEnd();
+	XListObjMgrUpdater<XActor>::SceneChangeEnd();
+}
+
+void XScene::SceneChangeStart()
+{
+	XListObjMgrUpdater<XSceneCom>::SceneChangeStart();
+	XListObjMgrUpdater<XActor>::SceneChangeStart();
+}
+
+typedef std::list<XListObjMgrUpdater<XSceneCom>::LISTDATA>::iterator SceneComIter;
+typedef std::list<XListObjMgrUpdater<XActor>::LISTDATA>::iterator ActorIter;
+
+
+void XScene::Release()
+{
+	// SceneComRelease
+	{
+		SceneComIter Start = XListObjMgrUpdater<XSceneCom>::m_ObjList.begin();
+		SceneComIter End = XListObjMgrUpdater<XSceneCom>::m_ObjList.end();
+
+		for (; Start != End; )
+		{
+			if (true == Start->Obj->IsDeath())
+			{
+				Start = XListObjMgrUpdater<XSceneCom>::m_ObjList.erase(Start);
+			}
+			else
+			{
+				++Start;
+			}
+		}
+	}
+
+	// Actor
+	{
+		{
+			std::list<XPtr<XTransform>>::iterator Start = m_AllTrans.begin();
+			std::list<XPtr<XTransform>>::iterator End = m_AllTrans.end();
+
+			for (; Start != End; )
+			{
+				if (true == (*Start)->IsDeath())
+				{
+					Start = m_AllTrans.erase(Start);
+				}
+				else
+				{
+					++Start;
+				}
+			}
+		}
+
+		// Col
+		{
+			std::map<int, std::list<XPtr<XColMgr>>>::iterator Start = m_AllCol.begin();
+			std::map<int, std::list<XPtr<XColMgr>>>::iterator End = m_AllCol.end();
+
+			for (; Start != End; ++Start)
+			{
+				std::list<XPtr<XColMgr>>::iterator StartCol = Start->second.begin();
+				std::list<XPtr<XColMgr>>::iterator EndCol = Start->second.end();
+
+				for (; StartCol != EndCol; )
+				{
+					if (true == (*StartCol)->IsDeath())
+					{
+						StartCol = Start->second.erase(StartCol);
+					}
+					else
+					{
+						++StartCol;
+					}
+
+				}
+
+			}
+		}
+		// Cam
+		{
+			std::map<int, XPtr<XCam>>::iterator Start = m_AllCam.begin();
+			std::map<int, XPtr<XCam>>::iterator End = m_AllCam.end();
+
+			for (; Start != End; )
+			{
+				if (true == Start->second->IsDeath())
+				{
+					if (m_MainCam == Start->second)
+					{
+						m_MainCam = nullptr;
+					}
+					Start = m_AllCam.erase(Start);
+				}
+				else
+				{
+					++Start;
+				}
+			}
+		}
+		// Renderer
+		{
+			std::map<int, std::list<XPtr<XRender>>>::iterator Start = m_AllRender.begin();
+			std::map<int, std::list<XPtr<XRender>>>::iterator End = m_AllRender.end();
+
+			for (; Start != End; ++Start)
+			{
+				std::list<XPtr<XRender>>::iterator StartRender = Start->second.begin();
+				std::list<XPtr<XRender>>::iterator EndRender = Start->second.end();
+
+				for (; StartRender != EndRender; )
+				{
+					if (true == (*StartRender)->IsDeath())
+					{
+						StartRender = Start->second.erase(StartRender);
+					}
+					else
+					{
+						++StartRender;
+					}
+
+				}
+
+			}
+		}
+
+		// Light
+		{
+			bool LightReCheck = false;
+
+			std::map<int, std::vector<XPtr<XLight>>>::iterator Start = m_AllLight.begin();
+			std::map<int, std::vector<XPtr<XLight>>>::iterator End = m_AllLight.end();
+
+			for (; Start != End; ++Start)
+			{
+				std::vector<XPtr<XLight>>::iterator StartRender = Start->second.begin();
+				std::vector<XPtr<XLight>>::iterator EndRender = Start->second.end();
+
+				for (; StartRender != EndRender; )
+				{
+					if (true == (*StartRender)->IsDeath())
+					{
+						LightReCheck = true;
+						// 라이트는 라이트 구조가 있기 때문에 이게 삭제된 순간.
+						// 데이터에 대해서 재정리를 해줘야 한다.
+						StartRender = Start->second.erase(StartRender);
+					}
+					else
+					{
+						++StartRender;
+					}
+
+				}
+
+			}
+
+			if (true == LightReCheck)
+			{
+				LightCheck();
+			}
+
+			// LightReCheck = true;
+		}
+
+		{
+			ActorIter Start = XListObjMgrUpdater<XActor>::m_ObjList.begin();
+			ActorIter End = XListObjMgrUpdater<XActor>::m_ObjList.end();
+
+			for (; Start != End; )
+			{
+				if (true == Start->Obj->IsDeath())
+				{
+					Start->Obj->Release();
+					Start = XListObjMgrUpdater<XActor>::m_ObjList.erase(Start);
+				}
+				else
+				{
+					++Start;
+				}
+			}
+		}
+	}
+}
+
+void XScene::PusWCAM(XPtr<XCam> _Cam)
+{
+	if (m_AllCam.end() != m_AllCam.find(_Cam->Order()))
+	{
+		ASSERTMSG(L"카메라의 오더가 겹쳤습니다.");
+	}
+
+	for (int Value : _Cam->m_VIEWRENDERERS)
+	{
+		CreateRenderGroupLight(Value);
+	}
+
+	if (nullptr == m_MainCam)
+	{
+		m_MainCam = _Cam;
+	}
+
+	m_AllCam[_Cam->Order()] = _Cam;
+}
+
+void XScene::PushLight(XPtr<XLight> _Light)
+{
+	// 혹시나 그룹이 없으면 만들고.
+	for (int Value : _Light->m_VIEWRENDERERS)
+	{
+		CreateRenderGroupLight(Value);
+	}
+
+	for (int Value : _Light->m_VIEWRENDERERS)
+	{
+		m_AllLight[Value].push_back(_Light);
+		LightData& LightData = m_AllLightData[Value].ArrLightData[m_AllLightData[Value].LightCount[0]];
+		_Light->DataList.push_back(&LightData);
+
+		++m_AllLightData[Value].LightCount[0];
+	}
+}
+
+void XScene::PushRender(XPtr<XRender> _Render)
+{
+	if (m_AllRender.end() == m_AllRender.find(_Render->Order()))
+	{
+		m_AllRender.insert(
+			std::map<int, std::list<XPtr<XRender>>>::value_type(_Render->Order(),
+				std::list<XPtr<XRender>>()));
+	}
+
+	m_AllRender[_Render->Order()].push_back(_Render);
+}
+
+void XScene::PushCol(XPtr<XColMgr> _Col)
+{
+	if (m_AllCol.end() == m_AllCol.find(_Col->Order()))
+	{
+		m_AllCol.insert(
+			std::map<int, std::list<XPtr<XColMgr>>>::value_type(_Col->Order(),
+				std::list<XPtr<XColMgr>>()));
+	}
+
+	m_AllCol[_Col->Order()].push_back(_Col);
+}
+
+bool XScene::ZSORT(XPtr<XRender>& _Left, XPtr<XRender>& _Right)
+{
+	XVec LeftZ = _Left->WPOS();
+	XVec RightZ = _Right->WPOS();
+
+	// 랜더러가 트랜스폼을 상속받은 이유
+	return _Left->WPOS().z > _Right->WPOS().z;
+}
+
+XPtr<XCam> XScene::MainCam()
+{
+	return  m_MainCam;
+}
+
+void XScene::CreateRenderGroupLight(int _Index)
+{
+	if (m_AllRender.end() != m_AllRender.find(_Index))
+	{
+		return;
+	}
+	// 라이트도 생깁니다.
+	m_AllRender.insert(
+		std::map<int, std::list<XPtr<XRender>>>::value_type(_Index,
+			std::list<XPtr<XRender>>()));
+
+	m_AllLight.insert(
+		std::map<int, std::vector<XPtr<XLight>>>::value_type(_Index,
+			std::vector<XPtr<XLight>>()));
+
+	m_AllLightData.insert(std::map<int, ObjectLightData>::value_type(_Index, ObjectLightData()));
+}
+
+ObjectLightData* XScene::GetLightData(int _Index)
+{
+	return &(m_AllLightData[_Index]);
+}
+
+
+void XScene::Render()
+{
+	//if (true == XWnd::MAINOBJ()->GetMoviePlayer()->IsPlay())
+	//{
+	//	// XWnd::MAINOBJ()->GetMoviePlayer()->PrintMovie();
+	//	// InvalidateRect(XWnd::MAINOBJ()->WINHWND(), nullptr, false);
+	//	return;
+	//}
+
+	// 백버퍼가 먼저 세팅 된다.
+	XDevice::MainObj()->RenderStart();
+
+	for (auto& _LightGroup : m_AllLight)
+	{
+		for (auto& _Light : _LightGroup.second)
+		{
+			_Light->LightUpdate();
+		}
+	}
+
+
+	// 캠을 모두 돌린다.
+	for (auto& _Cam : m_AllCam)
+	{
+		_Cam.second->ForwardCamTarget()->Clear(false);
+		_Cam.second->ForwardCamTarget()->Setting();
+
+		// 캠이 바라보는 랜더 그룹의 인덱스를 모두 탐색하고
+		for (int RenderOrder : _Cam.second->m_VIEWRENDERERS)
+		{
+			ObjectLightData* LightGroup = GetLightData(RenderOrder);
+
+			for (size_t i = 0; i < LightGroup->LightCount[0]; i++)
+			{
+
+				LightGroup->ArrLightData[i].LightDirInv = _Cam.second->m_VIEW.MulZero(LightGroup->ArrLightData[i].LightDirInv);
+				LightGroup->ArrLightData[i].LightDirInv.NORMAL3D();
+				LightGroup->ArrLightData[i].CamPos = _Cam.second->m_VIEW.MulOne(_Cam.second->TRANS()->WPOS());
+			}
+
+			// 그 인덱스에 해당하는 랜더 그룹을 찾는다.
+			std::map<int, std::list<XPtr<XRender>>>::iterator RenderGroup = m_AllRender.find(RenderOrder);
+
+			if (m_AllRender.end() == RenderGroup)
+			{
+				continue;
+			}
+
+			// std::list<XPtr<XRender>>
+			for (auto& _Render : RenderGroup->second)
+			{
+				if (false == _Render->IsUpdate())
+				{
+					continue;
+				}
+
+				_Render->ForwardRender(_Cam.second);
+				//_Render->Render(_Cam.second);
+			}
+		}
+
+		_Cam.second->GbufferTarget()->Clear(false);
+		_Cam.second->GbufferTarget()->Setting();
+		_Cam.second->DeferredLightTarget()->Clear(false);
+
+		for (int RenderOrder : _Cam.second->m_VIEWRENDERERS)
+		{
+			ObjectLightData* LightGroup = GetLightData(RenderOrder);
+
+			for (size_t i = 0; i < LightGroup->LightCount[0]; i++)
+			{
+				// LightGroup->ArrLightData[i].CamPos = _Cam.second->m_VIEW.MulOne(_Cam.second->TRANS()->WPOS());
+			}
+
+			std::map<int, std::list<XPtr<XRender>>>::iterator RenderGroup = m_AllRender.find(RenderOrder);
+
+			if (m_AllRender.end() == RenderGroup)
+			{
+				continue;
+			}
+			for (auto& _Render : RenderGroup->second)
+			{
+				if (false == _Render->IsUpdate())
+				{
+					continue;
+				}
+				//if (m_Player != nullptr)
+				//{
+				//	// 거리로 체크하는 부분
+				//	XVec asdasd = m_Player->TRANS()->WPOS();
+				//	XVec asdasd2 = _Render->TRANS()->WPOS();
+				//	float DistanceBetweenPlayerAndRenderer = XVec::Distance(m_Player->TRANS()->WPOS(), _Render->ACTOR()->TRANS()->WPOS());
+
+				//	if (DistanceBetweenPlayerAndRenderer >= 35.0f)
+				//	{
+				//		continue;
+				//	}
+				//}
+
+
+				_Render->DeferredRender(_Cam.second);
+			}
+
+
+
+			for (size_t i = 0; i < LightGroup->LightCount[0]; i++)
+			{
+				m_AllLight[RenderOrder][i]->ShadowTarget()->Setting();
+
+				for (auto& _Render : RenderGroup->second)
+				{
+					_Render->ShadowRender(LightGroup->ArrLightData[i]);
+				}
+				LightGroup->ArrLightData[i].m_CamViewInverse = _Cam.second->m_VIEW.InverseReturn();
+
+
+				_Cam.second->CalDefferdLight(LightGroup->ArrLightData[i], m_AllLight[RenderOrder][i]->ShadowTarget()->Texture(0));
+			}
+		}
+
+
+	}
+
+	for (auto& _Cam : m_AllCam)
+	{
+		_Cam.second->DeferredMergePrevEffect();
+	}
+
+	for (auto& _Cam : m_AllCam)
+	{
+		_Cam.second->DeferredMerge();
+	}
+
+	for (auto& _Cam : m_AllCam)
+	{
+		_Cam.second->DeferredMergeNextEffect();
+	}
+
+	XDevice::MainObj()->BackBufferRenderTarget()->Clear(true);
+
+	for (auto& _Cam : m_AllCam)
+	{
+		_Cam.second->CamMergePrevEffect();
+		_Cam.second->CamTargetMerge();
+		_Cam.second->CamMergeNextEffect();
+
+		XDevice::MainObj()->BackBufferRenderTarget()->Merge(_Cam.second->CamTarget());
+	}
+
+	{
+		XEngDebug::DebugRender();
+	}
+
+	XDevice::MainObj()->DataRenderTarget()->Clear(false);
+	// 포스트 프로세싱 구조.
+
+	XDevice::MainObj()->RenderEnd();
+
+}
+
+
+
+void XScene::LightCheck()
+{
+	for (auto& LightDataGroup : m_AllLightData)
+	{
+		LightDataGroup.second.LightCount[0] = 0;
+	}
+
+	for (auto& _LightGroup : m_AllLight)
+	{
+		for (auto& _Light : _LightGroup.second)
+		{
+			for (int Value : _Light->m_VIEWRENDERERS)
+			{
+				LightData& LightData = m_AllLightData[Value].ArrLightData[m_AllLightData[Value].LightCount[0]];
+				_Light->DataList.push_back(&LightData);
+				++m_AllLightData[Value].LightCount[0];
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "XDevice.h"
+#include "XEngDebug.h"
+#include "XRenderTarget.h"
+
+bool XDevice::bDefResInit = false;
+
+XDevice::XDevice()
+	: m_MC(0)
+	, m_MQ(0)
+	, m_Color(XVec::BLUE)
+	, m_pDevice(nullptr)
+	, m_pContext(nullptr)
+	, m_pSwapChain(nullptr)
+{
+
+}
+
+XDevice::~XDevice()
+{
+	// if (nullptr != m_DSV)	{		m_DSV->Release();			   }
+	// if (nullptr != m_RTV)	{		m_RTV->Release();			   }
+	// if (nullptr != m_DepthStencilTex)	{		m_DepthStencilTex->Release();  }
+	// if (nullptr != m_BackBufferTex)	{		m_BackBufferTex->Release();	   }
+	if (nullptr != m_pSwapChain) { m_pSwapChain->Release(); }
+	if (nullptr != m_pContext) { m_pContext->Release(); }
+	if (nullptr != m_pDevice) { m_pDevice->Release(); }
+
+}
+
+void XDevice::Init(const XPtr<XWnd>& _Window)
+{
+	// 지우는색
+	// 디바이스 INIT으로 들어오게 되고.
+	// 여기서 디바이스가 만들어지게 되면
+
+	if (nullptr == _Window)
+	{
+		ASSERTMSG(L"존재하지 않는 윈도우에 디바이스를 장착시키려고 만드려고 했습니다");
+	}
+
+	m_WINDOW = _Window;
+
+	int iFlag = 0;
+
+#ifdef _DEBUG
+	// 디바이스 만드는 모드가 디버그 모드 
+	iFlag = D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+	// 디바이스 레벨
+	D3D_FEATURE_LEVEL eLV = D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0;
+
+	if (S_OK != D3D11CreateDevice(
+		nullptr,
+		D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_HARDWARE,
+		nullptr,
+		iFlag,
+		nullptr, // 가능한 최대버전 알아내는 것
+		0,
+		D3D11_SDK_VERSION, // 현재 윈도우에 설치된 SDK 버전
+		&m_pDevice,
+		&eLV,
+		&m_pContext))
+	{
+		ASSERTMSG(L"디바이스와 컨텍스트 생성에 실패했습니다.");
+	}
+
+	m_MC = 4; // MC
+	// 
+	if (S_OK != m_pDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R32G32B32A32_UINT, m_MC, &m_MQ))
+	{
+		m_MC = 1; // MC
+		if (S_OK != m_pDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UINT, m_MC, &m_MQ))
+		{
+			ASSERTMSG(L"멀티샘플링 체크가 제대로 되지 않았습니다.");
+		}
+	}
+
+	CreateSwapChain();
+	//CreateDepthStencil();
+	//CreateViewPort();
+	CreateBackBufferTarget();
+
+	// 하나의 디바이스도 만들어지지 않았다면
+	if (false == bDefResInit)
+	{
+		MESHINIT();
+		SHADERINIT();
+		RASTERIZERINIT();
+		DEPTHINIT();
+		BLENDINIT();
+		SAMPLERINIT();
+		MATERIALINIT();
+		XRenderTarget::Init();
+		XEngDebug::Init(false);
+		bDefResInit = true;
+	}
+}
+
+
+void XDevice::CreateSwapChain()
+{
+	DXGI_SWAP_CHAIN_DESC SCDESC = { 0, };
+
+	SCDESC.BufferDesc.Width = m_WINDOW->Size().UIX();
+	SCDESC.BufferDesc.Height = m_WINDOW->Size().UIY();
+
+	// 여러분들 모티터 기기 정보를 얻어와서
+	SCDESC.BufferDesc.RefreshRate.Numerator = 60;
+	SCDESC.BufferDesc.RefreshRate.Denominator = 1;
+
+	SCDESC.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	SCDESC.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	SCDESC.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+
+	// 이걸 만드는 용도가 뭐냐?
+	SCDESC.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+	SCDESC.SampleDesc.Quality = 0;
+	SCDESC.SampleDesc.Count = 1;
+	SCDESC.OutputWindow = m_WINDOW->WINHWND();
+
+	SCDESC.BufferCount = 2;
+
+	SCDESC.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_DISCARD;
+	SCDESC.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+
+	// 전체화면
+	// true면 안한다.
+	SCDESC.Windowed = true;
+
+	IDXGIDevice* pD = nullptr;
+	IDXGIAdapter* pA = nullptr;
+	IDXGIFactory* pF = nullptr;
+
+	// 우리에게 제공하는 말단 API
+	// 얻어오는 용도
+	m_pDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&pD);
+	if (nullptr == pD)
+	{
+		ASSERTMSG(L"if (nullptr == pD)");
+	}
+
+	pD->GetParent(__uuidof(IDXGIAdapter), (void**)&pA);
+	if (nullptr == pA)
+	{
+		ASSERTMSG(L"if (nullptr == pA)");
+	}
+
+	pA->GetParent(__uuidof(IDXGIFactory), (void**)&pF);
+	if (nullptr == pF)
+	{
+		ASSERTMSG(L"if (nullptr == pF)");
+	}
+
+	if (S_OK != pF->CreateSwapChain(m_pDevice, &SCDESC, &m_pSwapChain))
+	{
+		ASSERTMSG(L"스왑체인 생성에 실패했습니다.");
+	}
+
+	pF->Release();
+	pA->Release();
+	pD->Release();
+
+}
+
+void XDevice::CreateBackBufferTarget()
+{
+	ID3D11Texture2D* m_BackBufferTex;
+
+	if (S_OK != m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&m_BackBufferTex))
+	{
+		ASSERTMSG(L"스왑체인에 텍스처가 존재하지 않습니다.");
+	}
+
+	m_BackBufferRenderTarget = new XRenderTarget();
+	m_BackBufferRenderTarget->CreateTarget(m_BackBufferTex, XVec::BLUE, true);
+	m_BackBufferRenderTarget->CreateDepth(0);
+
+	m_UserDataTarget = new XRenderTarget();
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+	m_UserDataTarget->CreateTarget(m_BackBufferRenderTarget->Texture(0)->Size(), XVec::ZERO);
+
+}
+
+void XDevice::RenderStart()
+{
+	m_BackBufferRenderTarget->Clear(true);
+	m_BackBufferRenderTarget->Setting();
+}
+
+void XDevice::RenderEnd()
+{
+	m_pSwapChain->Present(0, 0);
+}
+
+
+void XDevice::Reset()
+{
+	XDevice::MainObj()->Context()->PSSetShader(nullptr, 0, 0);
+	XDevice::MainObj()->Context()->GSSetShader(nullptr, 0, 0);
+	XDevice::MainObj()->Context()->HSSetShader(nullptr, 0, 0);
+	XDevice::MainObj()->Context()->DSSetShader(nullptr, 0, 0);
+	XDevice::MainObj()->Context()->VSSetShader(nullptr, 0, 0);
+}
+
+XPtr<XRenderTarget> XDevice::BackBufferRenderTarget()
+{
+	return m_BackBufferRenderTarget;
+}
+
+XPtr<XRenderTarget> XDevice::DataRenderTarget()
+{
+	return m_UserDataTarget;
+}

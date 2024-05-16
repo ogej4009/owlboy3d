@@ -1,0 +1,528 @@
+#pragma once
+#include <CGameMath.h>
+#include <vector>
+#include "CGameRenderer.h"
+
+struct _ttMapOption												맵인포
+{
+	float XCount;
+	float ZCount;
+	float YRatio;
+	float YScale;
+	CGameVector PixelUv;
+	CGameVector PixelScale;
+};
+
+struct YTri														매트릭스 
+{
+	CGameVector Arr[3];
+};
+
+struct YTile													위아래
+{
+	YTri Up;
+	YTri Down;
+};
+
+class CGameHeightMap : public CGameActorCom		
+{
+private:
+	int X;
+	int Z;
+
+	_ttMapOption MapOption;
+
+	// std::vector<NaviTri> m_Tri;
+	CGamePtr<CGameMesh> m_Mesh;									메쉬
+	CGamePtr<CGameRenderer> m_Render;							렌더러
+	CGamePtr<CGameRenderPlayer> m_RenderPlayer;					렌더데이터
+	std::vector<CVtxMeshIn3d> m_VecVtx;							버텍스
+	std::map<__int64, YTile> m_YTileMap;						Y정보
+	CGamePtr<CGameTexture> m_HTex;								텍스쳐
+
+	float Min;
+
+public:
+	CGamePtr<CGameRenderer> Render()
+	{
+		return m_Render;
+	}
+
+public:
+	float GetMin();
+	int2 Index(float4 _Pos);
+	float YHeight(float4 _Pos);
+	CGameVector CalTexelPos(const CGameVector& _Pos);
+	CGameVector CalPosToWorld(const CGameVector& _Pos);
+
+public:
+	void Init(int& _X, int& _Z, const CGameString _MapHeightTex, int _Order = 0);
+	void BaseTexture(const CGameString _TextureName);
+	void WTex(const CGameString _TextureName);;
+
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#include "CGameHeightMap.h"
+#include "CGameActor.h"
+#include "CGameVertex.h"
+
+
+void CGameHeightMap::Init(int& _X, int& _Z, const CGameString _MapHeightTex, int _Order)
+{
+
+	Min = 0.0f;
+
+											좌표 입력
+	X = _X;
+	Z = _Z;
+											카운트라니?
+	MapOption.XCount = (float)X;
+	MapOption.ZCount = (float)Z;
+	MapOption.YRatio = (float)1.0f;
+	MapOption.YRatio = (float)10.0f;
+	MapOption.YScale = TRANS()->WSCALE().y;
+
+	m_Render = ACTOR()->CreateCom<CGameRenderer>(_Order);		랜더받음
+
+	m_Mesh = new CGameMesh();
+
+	m_HTex = CGameTexture::Find(_MapHeightTex);					텍스쳐 받음
+
+
+
+	MapOption.PixelUv = CGameVector(1.0f / m_HTex->Size().x, 1.0f / m_HTex->Size().y);
+	MapOption.PixelScale = CGameVector(TRANS()->WSCALE().x / m_HTex->Size().x, TRANS()->WSCALE().z / m_HTex->Size().y);
+	CGamePtr<CGameVertexBuffer> VB = new CGameVertexBuffer();
+	CGamePtr<CGameIndexBuffer> IB = new CGameIndexBuffer();
+
+	m_VecVtx.resize((X + 1) * (Z + 1));
+
+	float StartX = -0.5f;
+	float StartZ = 0.5f;
+
+	for (int z = 0; z < Z + 1; z++)
+	{
+		for (int x = 0; x < X + 1; x++)
+		{
+			float PosZ = StartZ - (z * ((float)1 / Z));
+			float PosX = StartX + (x * ((float)1 / X));
+
+			int Index = z * (X + 1) + x;
+
+			m_VecVtx[Index].Pos.x = PosX;
+			m_VecVtx[Index].Pos.y = 0.0f;
+			m_VecVtx[Index].Pos.z = PosZ;
+
+			m_VecVtx[Index].Uv.x = (float)x;
+			m_VecVtx[Index].Uv.y = (float)z;
+			m_VecVtx[Index].Normal = CGameVector::UP;
+		}
+	}
+
+	VB->Create(m_VecVtx.size(), sizeof(CVtxMeshIn3d), &m_VecVtx[0]);
+
+
+
+	std::vector<UINT> m_MapIdx;
+
+
+	for (int z = 0; z < Z; z++)
+	{
+		for (int x = 0; x < X; x++)
+		{
+			int Pivot = z * (X + 1) + x;
+			m_MapIdx.push_back(Pivot);
+			m_MapIdx.push_back(Pivot + 1);
+			m_MapIdx.push_back(Pivot + (X + 1) + 1);
+
+			m_MapIdx.push_back(Pivot);
+			m_MapIdx.push_back(Pivot + (X + 1) + 1);
+			m_MapIdx.push_back(Pivot + (X + 1));
+		}
+	}
+
+	IB->Create(m_MapIdx.size(), sizeof(UINT), &m_MapIdx[0], DXGI_FORMAT::DXGI_FORMAT_R32_UINT);
+	m_Mesh->VB(VB);
+	m_Mesh->IB(IB);
+
+	m_Render->CreateRenderPlayer(m_Mesh, L"HeightMap");
+	WTex(_MapHeightTex);
+	m_Render->CBUFFER(L"MapOption", &MapOption, eConstBufferMode::CB_LINK);
+}
+
+void CGameHeightMap::BaseTexture(const CGameString _TextureName)
+{
+	m_Render->TEXTURE(L"BaseTex", _TextureName);
+}
+
+CGameVector CGameHeightMap::CalTexelPos(const CGameVector& _Pos)
+{
+	CGameVector Size = m_HTex->Size();
+
+	CGameVector Vec;
+
+	Vec.x = _Pos.x + 0.5f;
+	Vec.y = (_Pos.z * -1.0f) + 0.5f;
+
+	Vec.x *= Size.x;
+	Vec.y *= Size.y;
+	return Vec;
+}
+
+void CGameHeightMap::WTex(const CGameString _TextureName)
+{
+	m_Render->TEXTURE(L"WTex", _TextureName);
+
+	m_YTileMap.clear();
+
+	int HX = (X / 2);
+	int HZ = (Z / 2);
+
+	float InterX = (1.0f / (float)X);
+	float InterZ = (1.0f / (float)Z);
+	float HInterX = InterX * 0.5F;
+	float HInterZ = InterZ * 0.5F;
+
+	for (int z = -HZ; z < (HZ + 1); z++)
+	{
+		for (int x = -HX; x < (HX + 1); x++)
+		{
+			int2 Index;
+			Index.x = x;
+			Index.y = z;
+
+			if (Index.x == 0 && Index.y == -10)
+			{
+				int a = 0;
+			}
+
+			float CenterX = (x * InterX);
+			float CenterZ = (z * InterZ);
+
+			m_YTileMap[Index.Key].Up.Arr[0] = { CenterX + -HInterX, 0.0f, CenterZ + HInterZ };
+			m_YTileMap[Index.Key].Up.Arr[1] = { CenterX + HInterX, 0.0f, CenterZ + HInterZ };
+			m_YTileMap[Index.Key].Up.Arr[2] = { CenterX + HInterX, 0.0f, CenterZ + -HInterZ };
+
+
+			m_YTileMap[Index.Key].Down.Arr[0] = m_YTileMap[Index.Key].Up.Arr[0];
+			m_YTileMap[Index.Key].Down.Arr[1] = m_YTileMap[Index.Key].Up.Arr[2];
+			m_YTileMap[Index.Key].Down.Arr[2] = { CenterX + -HInterX, 0.0f, CenterZ + -HInterZ };
+
+			CGameVector Pos;
+			Pos = CalTexelPos(m_YTileMap[Index.Key].Up.Arr[0]);
+			m_YTileMap[Index.Key].Up.Arr[0].y = m_HTex->GetPixel({ (int)Pos.x, (int)Pos.y }).x * TRANS()->WSCALE().y;
+			Pos = CalTexelPos(m_YTileMap[Index.Key].Up.Arr[1]);
+			m_YTileMap[Index.Key].Up.Arr[1].y = m_HTex->GetPixel({ (int)Pos.x, (int)Pos.y }).x * TRANS()->WSCALE().y;
+			Pos = CalTexelPos(m_YTileMap[Index.Key].Up.Arr[2]);
+			m_YTileMap[Index.Key].Up.Arr[2].y = m_HTex->GetPixel({ (int)Pos.x, (int)Pos.y }).x * TRANS()->WSCALE().y;
+
+			Pos = CalTexelPos(m_YTileMap[Index.Key].Down.Arr[0]);
+			m_YTileMap[Index.Key].Down.Arr[0].y = m_HTex->GetPixel({ (int)Pos.x, (int)Pos.y }).x * TRANS()->WSCALE().y;
+			Pos = CalTexelPos(m_YTileMap[Index.Key].Down.Arr[1]);
+			m_YTileMap[Index.Key].Down.Arr[1].y = m_HTex->GetPixel({ (int)Pos.x, (int)Pos.y }).x * TRANS()->WSCALE().y;
+			Pos = CalTexelPos(m_YTileMap[Index.Key].Down.Arr[2]);
+			m_YTileMap[Index.Key].Down.Arr[2].y = m_HTex->GetPixel({ (int)Pos.x, (int)Pos.y }).x * TRANS()->WSCALE().y;
+
+			for (size_t i = 0; i < 3; i++)
+			{
+				if (Min > m_YTileMap[Index.Key].Up.Arr[i].y)
+				{
+					Min = m_YTileMap[Index.Key].Up.Arr[i].y;
+				}
+			}
+
+			for (size_t i = 0; i < 3; i++)
+			{
+				if (Min > m_YTileMap[Index.Key].Down.Arr[i].y)
+				{
+					Min = m_YTileMap[Index.Key].Down.Arr[i].y;
+				}
+			}
+		}
+	}
+
+
+}
+
+int2 CGameHeightMap::Index(float4 _Pos)
+{
+	float4 Scale = TRANS()->WSCALE();
+
+	float XSize = Scale.x / (float)X;
+	float ZSize = Scale.z / (float)Z;
+
+	int2 ReturnIndex;
+
+	float IndexX = _Pos.x / XSize;
+	float IndexZ = _Pos.z / ZSize;
+
+	IndexX = roundf(IndexX);
+	IndexZ = roundf(IndexZ);
+
+	ReturnIndex.x = (int)IndexX;
+	ReturnIndex.y = (int)IndexZ;
+
+	return ReturnIndex;
+}
+
+CGameVector CGameHeightMap::CalPosToWorld(const CGameVector& _Pos)
+{
+	CGameVector ReturnX;
+	CGameVector Scale;
+	Scale = TRANS()->WSCALE();
+
+	ReturnX.x = _Pos.x * Scale.x;
+	ReturnX.z = _Pos.z * Scale.z;
+	ReturnX.y = _Pos.y;
+
+	return ReturnX;
+}
+
+float CGameHeightMap::YHeight(float4 _Pos)
+{
+	float4 Scale = TRANS()->WSCALE();
+
+	Scale = Scale.HalfVector();
+
+	if (
+		_Pos.z > Scale.z ||
+		_Pos.z < -Scale.z ||
+		_Pos.x > Scale.x ||
+		_Pos.x < -Scale.x
+		)
+	{
+		return Min;
+	}
+
+	CGameVector Ori = _Pos;
+	Ori.y = 0.0f;
+	CGameVector Dir = CGameVector::UP;
+
+
+	int2 Key = Index(_Pos);
+	float YDis = Min;
+
+	CGameVector UpTri0 = CalPosToWorld(m_YTileMap[Key.Key].Up.Arr[0]);
+	CGameVector UpTri1 = CalPosToWorld(m_YTileMap[Key.Key].Up.Arr[1]);
+	CGameVector UpTri2 = CalPosToWorld(m_YTileMap[Key.Key].Up.Arr[2]);
+	DirectX::TriangleTests::Intersects(Ori, Dir, UpTri0, UpTri1, UpTri2, YDis);
+	if (YDis != Min)
+	{
+		return YDis;
+	}
+
+	CGameVector DownTri0 = CalPosToWorld(m_YTileMap[Key.Key].Down.Arr[0]);
+	CGameVector DownTri1 = CalPosToWorld(m_YTileMap[Key.Key].Down.Arr[1]);
+	CGameVector DownTri2 = CalPosToWorld(m_YTileMap[Key.Key].Down.Arr[2]);
+	DirectX::TriangleTests::Intersects(Ori, Dir, DownTri0, DownTri1, DownTri2, YDis);
+	if (YDis != Min)
+	{
+		return YDis;
+	}
+
+	return Min;
+
+}
+
+float CGameHeightMap::GetMin()
+{
+	return Min;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+#include "CalBase.hlsli"
+
+struct VTX3DIN
+{
+    float4 Pos : POSITION;
+    float4 Uv : TEXCOORD;
+    float4 Color : COLOR;
+    float4 Normal : NORMAL; // 이녀석이 Y축
+    float4 BiNormal : BINORMAL; // 이녀석이 X축
+    float4 Tangent : TANGENT; // 이녀석이 Z축 // 나중에 바꿀수 있다.
+    float4 Weight : BLENDWEIGHT; // 얼마나 영향을 받아야 하는가? 0.5 영향을 받는다.
+    int4 Index : BLENDINDICES; // 21번째 본에
+};
+
+struct VTX3DOUT
+{
+    float4 Pos : SV_Position;
+    float4 Uv : TEXCOORD;
+    float4 Color : COLOR;
+    
+    float4 ViewPos : POSITION;
+    float4 ViewNormal : NORMAL;
+	float4 ViewBiNormal : BINORMAL;
+	float4 ViewTangent : TANGENT;
+};
+
+cbuffer HTRANSDATA : register(b0)
+{
+    matrix POS;
+    matrix SCALE;
+    matrix ROT;
+    matrix REVOL;
+    matrix PARENT;
+    matrix LWORLD;
+    matrix WWORLD;
+    matrix VIEW;
+    matrix PROJ;
+    matrix WV;
+    matrix VP;
+    matrix WVP;
+}
+
+
+cbuffer MapOption : register(b3)
+{
+    float XCount;
+    float ZCount;
+    float PixelRatio;
+    float YScale;
+    float4 PixelUv;
+    float4 PixelScale;
+}
+
+Texture2D HTex : register(t0);
+SamplerState Smp : register(s0);
+
+
+VTX3DOUT VS_MapDefferdTexture(VTX3DIN _In)
+{
+    
+    // 계산을 한번 하고 들어가야 한다.
+    // _In.Normal
+    
+    float2 YValueUv = float2(_In.Uv.x / XCount, _In.Uv.y / ZCount);
+    float2 RightUv = float2(YValueUv.x + PixelUv.x * PixelRatio, YValueUv.y);
+    float2 FowardUv = float2(YValueUv.x, YValueUv.y - PixelUv.y * PixelRatio);
+    
+    // 색깔로 높이를 가져옵니다.
+    
+    float4 MapColor = HTex.SampleLevel(Smp, YValueUv.xy, 0);
+    float4 ColorRight = HTex.SampleLevel(Smp, RightUv.xy, 0);
+    float4 ColorFoward = HTex.SampleLevel(Smp, FowardUv.xy, 0);
+    
+    float4 Pos = _In.Pos;
+    float4 Right = float4(Pos.x + PixelScale.x * PixelRatio, 0.0f, Pos.z, 0.0f);
+    float4 Foward = float4(Pos.x, 0.0f, Pos.z + PixelScale.y * PixelRatio, 0.0f);
+    _In.Pos.y = MapColor.x;
+    Pos.y = MapColor.x * YScale;
+    Right.y = ColorRight.x * YScale;
+    Foward.y = ColorFoward.x * YScale;
+    
+    
+    _In.Normal.xyz = normalize(cross(Foward.xyz - Pos.xyz, Right.xyz - Pos.xyz));
+    
+    Pos.w = 1.0f;
+    _In.Normal.w = 0.0f;
+    VTX3DOUT Out = (VTX3DOUT) 0;
+    
+    Out.Pos = mul(_In.Pos, WVP);
+    Out.Uv = _In.Uv;
+    Out.Color = _In.Color;
+    Out.ViewPos = mul(_In.Pos, WV);
+    
+    
+    Out.ViewNormal = normalize(mul(_In.Normal, WV));
+
+	_In.BiNormal.w = 0.0f;
+    Out.ViewBiNormal = normalize(mul(_In.BiNormal, WV));
+
+	_In.Tangent.w = 0.0f;
+    Out.ViewTangent = normalize(mul(_In.Tangent, WV));
+
+    return Out;
+}
+
+struct DEFFERDOUT
+{
+    float4 DifColor : SV_Target0;
+    float4 PosColor : SV_Target1;
+    float4 NorColor : SV_Target2;
+    float4 DepColor : SV_Target3;
+};
+
+cbuffer RenderOption : register(b8)
+{
+    int IsDifTexture;
+    int IsNormalTexture;
+    int IsOutLine;
+    int IsShadow;
+    int IsAni;
+    int IsDummy0;
+    int IsDummy1;
+    int IsDummy2;
+	float4 BasicColor;
+}
+
+
+// 텍스처를 사용하겠다고 한것.
+Texture2D BaseTex : register(t0);
+Texture2D NormalTexture : register(t1);
+DEFFERDOUT PS_MapDefferdTexture(VTX3DOUT _In)
+{
+    DEFFERDOUT Out = (DEFFERDOUT) 0;
+    
+	//if (0 != IsNormalTexture)
+	//{
+	//	_In.ViewNormal = CalBump(_In.ViewNormal, _In.ViewBiNormal, _In.ViewTangent, _In.Uv.xy, NormalTexture, Smp);
+	//}
+    
+    Out.DifColor = BaseTex.Sample(Smp, _In.Uv.xy);
+    Out.NorColor = _In.ViewNormal;
+    Out.PosColor = _In.ViewPos;
+    Out.DepColor.x = _In.ViewPos.z;
+    Out.DepColor.w = Out.PosColor.w = Out.NorColor.w = 1.0f;
+    return Out;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+float4 CalBump(float4 _ViewNormal, float4 _BiNormal, float4 _Tangent, float2 _Uv, Texture2D _Bump, SamplerState _Smp)
+{
+    float4 TexNormal = _Bump.Sample(_Smp, _Uv.xy);
+    // 0.2      0.4 * - 1.0f
+    // - 0.6f
+    // - 1 * 0.5f + 1
+    TexNormal = TexNormal * 2.0f - 1.0f;
+    TexNormal.w = 0.0f;
+    TexNormal = normalize(TexNormal);
+
+    float3x3 TangentSpace = float3x3(_Tangent.xyz, _BiNormal.xyz, _ViewNormal.xyz);
+    TexNormal.xyz = mul(TexNormal.xyz, TangentSpace);
+    TexNormal = normalize(TexNormal);
+
+    return TexNormal;
+}

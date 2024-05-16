@@ -1,0 +1,136 @@
+FLIP X: Y:
+ANGLE 
+REPEAT X: Y:
+ID 
+
+BATCH	SPACING X: Y:
+OFFSET
+SOURCE SIZE
+DISPLAY SIZE
+POSITION
+
+
+
+
+
+
+
+
+
+
+
+/*
+	HIDE SPRITE LAYER ?
+	SNAP TO GRID ?
+*/
+
+
+/* 
+::::::::::::::BATCH::::::::::::::
+SPACING  
+X : 
+Y : 
+*/
+
+/* 
+::::::::::::::CREATE NEW BACKDROP
+
+FLIP X		FLIP Y		
+ANGLE : 
+ID : 
+REPEAT X : 
+REPEAT Y :
+ANIM FRAMES : 
+ANIM DELAY : 
+*/
+
+/* 
+:::::::::::::: UPDATE :::::::::::::: 
+- OFFSET		X :		Y : 
+- SOURCE SIZE	X :		Y : 
+- DISPLAY SIZE	X :		Y :
+- POSITION		X :		Y :
+*/
+
+
+
+
+
+
+
+
+// 캡쳐 스크린샷 MFC 기능 
+
+// 타일만 
+// 레이어를 만들자 
+// 애니메이션 
+// 몬스터 
+
+// Properties 속성 : 색, 모양, 왜곡, UV 설정등 특이한것들
+{
+	이거지 프로펄티 
+
+}
+
+
+
+backdrops ? >> 레이어 
+
+
+// 이건 툴 안에서의 뷰 설정 
+// 모양에 맞추기 
+// 숨김 안보임
+snap to grid 
+hide sprite layer
+
+
+batch 일괄처리 
+묶어서 처리하는 것에 동의 하는가? 
+spacing x y 간격 
+
+
+
+=============== anime ===============
+offset
+source size 
+display size
+position
+
+
+
+Flip x, y, check 
+angle 
+id 
+repeat x, y 체크하는 것 
+
+
+anime frame					애니메이션 바꾼다. 
+anime delay
+
+
+
+enum 에서 낮과 밤 설정 
+
+sprites
+layers						레이어 만드는 것 
+collision					카메라 충돌체 
+
+
+
+
+layer order 
+sorting
+
+
+door 설정 
+출돌체 설정 
+
+
+스프라이트 폭발 설정 
+혹은 색변형에 대해  //////////////////////////////// 
+
+
+이벤트 트리거 
+
+
+
